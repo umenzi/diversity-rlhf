@@ -1,19 +1,29 @@
 """Train a reward model using preference comparisons."""
 
 import pathlib
-from typing import Any, Mapping, Optional, Union
+from typing import (
+    Any,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 import imitation.data.serialize as data_serialize
 import imitation.policies.serialize as policies_serialize
 import numpy as np
 import torch as th
 from imitation.algorithms import preference_comparisons
-from imitation.algorithms.preference_comparisons import PreferenceComparisons
+from imitation.algorithms.preference_comparisons import PreferenceComparisons, PreferenceGatherer
+from imitation.data import rollout
+from imitation.data.types import TrajectoryWithRewPair
 from imitation.rewards.reward_nets import BasicRewardNet
 from imitation.scripts.config.train_preference_comparisons import (
     train_preference_comparisons_ex,
 )
 from imitation.util import logger as imit_logger
+from scipy import special
 from stable_baselines3.common import type_aliases
 from stable_baselines3.common.vec_env import VecEnv
 
@@ -52,6 +62,111 @@ def save_checkpoint(
         )
 
 
+class ConflictingSyntheticGatherer(PreferenceGatherer):
+    """Computes synthetic preferences using ground-truth environment rewards.
+    Allows creating conflicting preferences."""
+
+    def __init__(
+        self,
+        conflicting_prob: float = 0,
+        temperature: float = 1,
+        discount_factor: float = 1,
+        sample: bool = True,
+        rng: Optional[np.random.Generator] = None,
+        threshold: float = 50,
+        custom_logger: Optional[imit_logger.HierarchicalLogger] = None,
+    ) -> None:
+        """Initialize the synthetic preference gatherer.
+
+        Args:
+            temperature: the preferences are sampled from a softmax, this is
+                the temperature used for sampling.
+                `temperature=0` leads to deterministic results (for equal rewards, 0.5 will be returned).
+            conflicting_prob: probability of conflicting preferences.
+                Conflicting means that the preferences are flipped. If 0, no conflicts (i.e. this would
+                work the exact same as SyntheticGatherer). If 1, all preferences are conflicting.
+            discount_factor: discount factor that is used to compute
+                how good a fragment is.
+                Default is to use undiscounted sums of rewards (as in the DRLHP paper).
+            sample: if True (default), the preferences are zero or one, sampled from
+                a Bernoulli's distribution (or 0.5 in the case of ties with zero
+                temperature).
+                If False, then the underlying Bernoulli probabilities
+                are returned instead.
+            rng: random number generator, only used if
+                ``temperature > 0`` and ``sample=True``
+            threshold: preferences are sampled from a softmax of returns.
+                To avoid overflows, we clip differences in returns that are
+                above this threshold (after multiplying with temperature).
+                This threshold is therefore in logspace.
+                The default value
+                of 50 means that probabilities below 2e-22 are rounded up to 2e-22.
+            custom_logger: Where to log to; if None (default), create a new logger.
+
+        Raises:
+            ValueError: if `sample` is true and no random state is provided.
+        """
+        super().__init__(custom_logger=custom_logger)
+        self.conflicting_prob = conflicting_prob
+        self.temperature = temperature
+        self.discount_factor = discount_factor
+        self.sample = sample
+        self.rng = rng
+        self.threshold = threshold
+
+        if self.sample and self.rng is None:
+            raise ValueError("If `sample` is True, then `rng` must be provided.")
+
+    def __call__(self, fragment_pairs: Sequence[TrajectoryWithRewPair]) -> np.ndarray:
+        """Computes probability fragment 1 is preferred over fragment 2."""
+        returns1, returns2 = self._reward_sums(fragment_pairs)
+        if self.temperature == 0:
+            if self.rng.random() < self.conflicting_prob:
+                return 1 - ((np.sign(returns1 - returns2) + 1) / 2)
+            else:
+                return (np.sign(returns1 - returns2) + 1) / 2
+
+        returns1 /= self.temperature
+        returns2 /= self.temperature
+
+        # clip the returns to avoid overflows in the softmax below
+        returns_diff = np.clip(returns2 - returns1, -self.threshold, self.threshold)
+        # Instead of computing exp(rews1) / (exp(rews1) + exp(rews2)) directly,
+        # we divide enumerator and denominator by exp(rews1) to prevent overflows:
+        model_probs = 1 / (1 + np.exp(returns_diff))
+
+        # Make model_probs conflicting with probability `conflicting_prob`
+        if self.rng.random() < self.conflicting_prob:
+            model_probs = 1 - model_probs
+
+        # Make model_probs conflicting with probability `conflicting_prob`
+        # Compute the mean binary entropy.
+        # This metric helps estimate how good we can expect the performance of the learned reward
+        # model to be at predicting preferences.
+        entropy = -(
+            special.xlogy(model_probs, model_probs)
+            + special.xlogy(1 - model_probs, 1 - model_probs)
+        ).mean()
+        self.logger.record("entropy", entropy)
+
+        if self.sample:
+            assert self.rng is not None
+            return self.rng.binomial(n=1, p=model_probs, size=model_probs.shape).astype(np.float32)
+        return model_probs
+
+    def _reward_sums(self, fragment_pairs) -> Tuple[np.ndarray, np.ndarray]:
+        rews1, rews2 = zip(
+            *[
+                (
+                    rollout.discounted_sum(f1.rews, self.discount_factor),
+                    rollout.discounted_sum(f2.rews, self.discount_factor),
+                )
+                for f1, f2 in fragment_pairs
+            ],
+        )
+        return np.array(rews1, dtype=np.float32), np.array(rews2, dtype=np.float32)
+
+
 @train_preference_comparisons_ex.main
 def train_preference_comparisons(
         env: VecEnv,
@@ -77,6 +192,7 @@ def train_preference_comparisons(
         rng: np.random.Generator = None,
         n_episodes_eval: int = 10,
         reward_type=None,
+        conflicting_prob: float = 0,
 ) -> tuple[BasicRewardNet, PreferenceComparisons, dict[str, Mapping[str, float] | Any] | Mapping[str, Any]]:
     """Train a reward model using preference comparisons.
 
@@ -139,6 +255,9 @@ def train_preference_comparisons(
             the average episode reward of the imitation policy for return. Only relevant
             if trajectory_path is not None.
         reward_type: The type of reward model to use (e.g. CnnRewardNet). If None, a BasicRewardNet
+        conflicting_prob: probability of conflicting preferences.
+                Conflicting means that the preferences are flipped. If 0, no conflicts (i.e. this would
+                work the exact same as SyntheticGatherer). If 1, all preferences are conflicting.
 
     Returns:
         Rollout statistics from trained policy.
@@ -164,8 +283,8 @@ def train_preference_comparisons(
             rng=rng,
         )
     )
-    # The synthetic gatherer computes synthetic preferences using ground-truth environment rewards.
-    gatherer = preference_comparisons.SyntheticGatherer(rng=rng, custom_logger=custom_logger)
+    # The conflicting synthetic gatherer computes synthetic preferences using ground-truth environment rewards.
+    gatherer = ConflictingSyntheticGatherer(rng=rng, custom_logger=custom_logger, conflicting_prob=conflicting_prob)
 
     if reward_type is None:
         reward_net = BasicRewardNet(
