@@ -13,4 +13,9 @@ module load openmpi
 module load python
 module load py-matplotlib
 module load py-torch
+module load py-pip
+
+pip install imitation
+pip install stable-baselines3[extra]
+
 srun ./compare.py > output.log
