@@ -14,6 +14,12 @@ from stable_baselines3.ppo import MlpPolicy
 # Hyperparameters based on:
 # https://github.com/HumanCompatibleAI/imitation/blob/a8b079c469bb145d1954814f22488adff944aa0d/tests/algorithms/test_preference_comparisons.py#L42
 
+# Look into TensorBoard:
+# https://stable-baselines3.readthedocs.io/en/master/guide/tensorboard.html
+
+# TODO: Look into reward ensembles:
+# https://github.com/HumanCompatibleAI/imitation/blob/master/src/imitation/rewards/reward_nets.py#L884
+
 
 def print_reward_info(reward_1, reward_2, a_1: str, a_2: str, n_episodes: int):
     print(
@@ -106,8 +112,7 @@ expert_learner.learn(10_000)  # Use something bigger, like 100_000, for better p
 print("We train a not-quite-expert")
 
 not_expert_reward_net, not_expert_pref_comparisons, not_expert_result = (
-    train_preference_comparisons(env=venv,
-                                 agent=not_expert,
+    train_preference_comparisons(env=venv, agent=not_expert,
                                  total_timesteps=5_000,
                                  total_comparisons=200,
                                  num_iterations=2,
