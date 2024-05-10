@@ -1,12 +1,15 @@
 #!/bin/sh
 
-#SBATCH --job-name="delftblue_test"
-#SBATCH --partition=compute
-#SBATCH --account=research-eemcs-diam
-#SBATCH --time=01:00:00
+#SBATCH --job-name="train_rl_models"
+#SBATCH --partition=gpu-a100
+#SBATCH --account=education-eemcs-courses-cse3000
+#SBATCH --time=20:00:00
 #SBATCH --ntasks=4
 #SBATCH --cpus-per-task=1
-#SBATCH --mem-per-cpu=1GB
+#SBATCH --gpus-per-task=1
+#SBATCH --mem=7GB
+
+# Alternatively, for partition we can use 'gpu', less powerful (4x with 32 GB RAM instead of 4x with 80 GB RAM)
 
 module load 2023r1
 module load openmpi
@@ -18,4 +21,4 @@ module load py-pip
 pip install imitation
 pip install stable-baselines3[extra]
 
-srun ./compare.py > output.log
+srun ./lunar_lander.py > output.log
