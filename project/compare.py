@@ -1,5 +1,6 @@
 import numpy as np
 
+from project.helpers import print_reward_info
 from project.train_preference_comparisons import train_preference_comparisons
 
 from imitation.rewards.reward_wrapper import RewardVecEnvWrapper
@@ -19,15 +20,6 @@ from stable_baselines3.ppo import MlpPolicy
 
 # TODO: Look into reward ensembles:
 # https://github.com/HumanCompatibleAI/imitation/blob/master/src/imitation/rewards/reward_nets.py#L884
-
-
-def print_reward_info(reward_1, reward_2, a_1: str, a_2: str, n_episodes: int):
-    print(
-        f"{a_1} mean reward: {np.mean(reward_1):.2f} +/- "
-        f"{np.std(reward_1) / np.sqrt(100):.2f}, Num episodes: {n_episodes}")
-    print(
-        f"{a_2} mean reward: {np.mean(reward_2):.2f} +/- "
-        f"{np.std(reward_2) / np.sqrt(100):.2f}, Num episodes: {n_episodes}")
 
 
 rng = np.random.default_rng()

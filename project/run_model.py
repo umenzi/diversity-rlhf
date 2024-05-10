@@ -24,7 +24,7 @@ venv = helpers.get_atari_env()
 learner = helpers.load_model(venv)
 
 # We run 10 "games" with the trained agent
-helpers.evaluate(learner, num_episodes=10, deterministic=True)
+helpers.evaluate(learner, num_episodes=10, deterministic=True, env_name="lunar")
 
 """When generating rollouts in image environments, be sure to use the agent's get_env() function rather than using
 the original environment.
