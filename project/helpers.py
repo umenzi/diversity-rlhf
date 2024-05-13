@@ -6,29 +6,32 @@ from typing import Optional, List
 import gymnasium as gym
 import numpy as np
 import pandas as pd
+
+from matplotlib import pyplot as plt
+
 from gymnasium.wrappers import TimeLimit
+from seals.util import AutoResetWrapper
+
 from imitation.data.wrappers import RolloutInfoWrapper
 from imitation.policies.serialize import load_policy
-from matplotlib import pyplot as plt
-from seals.util import AutoResetWrapper
+
+
 from stable_baselines3 import PPO
 from stable_baselines3.common.atari_wrappers import AtariWrapper
 from stable_baselines3.common.base_class import SelfBaseAlgorithm
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.vec_env import VecFrameStack
+
 from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
 
-
-def visualize_training(logdir: str, separate: bool = False, selected_learners: Optional[List[str]] = None):
+def visualize_training(logdir: str, environments: List[str], separate: bool = False, selected_learners: Optional[List[str]] = None):
     """
     Visualize the training of multiple learners in the same plot.
 
-    It looks for learners or the perfect agent, and plots the average rewards and time of each of them,
-    according to the tensorboard logs stored in the logdir directory.
-
     Args:
         logdir: (str) the directory where the tensorboard logs are stored
+        environments: (list) list of environments to include in the plot
         separate: (bool) whether to plot the data of each learner separately or not
         selected_learners: (list) list of learners to include in the plot
 
@@ -49,89 +52,96 @@ def visualize_training(logdir: str, separate: bool = False, selected_learners: O
 
         return rewards_df, time_df
 
-    # Get a list of all directories in the log directory
-    dirs = os.listdir(logdir)
-    # Regular expression to match 'learner_' followed by two digits, an underscore, and one or more digits
-    # and 'perfect_agent_' followed by one or more digits
-    pattern_learner = re.compile(r'(learner_\d+)_(\d+)')
-    pattern_perfect_agent = re.compile(r'(perfect_agent)_(\d+)')
-    # Group the directories by the learner name
-    learner_dirs = {}
+    for environment in environments:
+        env_logdir = os.path.join(environment, logdir)
 
-    for dir in dirs:
-        match_learner = pattern_learner.match(dir)
-        match_perfect_agent = pattern_perfect_agent.match(dir)
-        if match_learner:
-            learner_name = match_learner.group(1)
-            if learner_name not in learner_dirs:
-                learner_dirs[learner_name] = []
-            learner_dirs[learner_name].append(dir)
-        elif match_perfect_agent:
-            learner_name = match_perfect_agent.group(1)
-            if learner_name not in learner_dirs:
-                learner_dirs[learner_name] = []
-            learner_dirs[learner_name].append(dir)
+        # Get a list of all directories in the log directory
+        dirs = os.listdir(env_logdir)
+        # Regular expression to match 'learner_' followed by two digits, an underscore, and one or more digits
+        # and 'perfect_agent_' followed by one or more digits
+        pattern_learner = re.compile(r'(learner_\d+)_(\d+)')
+        pattern_perfect_agent = re.compile(r'(perfect_agent)_(\d+)')
+        # Group the directories by the learner name
+        learner_dirs = {}
 
-    # If selected_learners is specified, filter learner_dirs to only include the selected learners
-    if selected_learners is not None:
-        learner_dirs = {learner_name: dirs for learner_name, dirs in learner_dirs.items()
-                        if learner_name in selected_learners}
+        for dir in dirs:
+            match_learner = pattern_learner.match(dir)
+            match_perfect_agent = pattern_perfect_agent.match(dir)
+            if match_learner:
+                learner_name = match_learner.group(1)
+                if learner_name not in learner_dirs:
+                    learner_dirs[learner_name] = []
+                learner_dirs[learner_name].append(dir)
+            elif match_perfect_agent:
+                learner_name = match_perfect_agent.group(1)
+                if learner_name not in learner_dirs:
+                    learner_dirs[learner_name] = []
+                learner_dirs[learner_name].append(dir)
 
-    # Now you can use learner_dirs to parse the tensorboard logs and plot the data
-    if separate:
-        for name, dirs in learner_dirs.items():
-            rewards_dfs = []
-            time_dfs = []
+        # If selected_learners is specified, filter learner_dirs to only include the selected learners
+        if selected_learners is not None:
+            learner_dirs = {learner_name: dirs for learner_name, dirs in learner_dirs.items() if learner_name in selected_learners}
 
-            for dir in dirs:
-                rewards_df, time_df = parse_tensorboard_logs(os.path.join(logdir, dir))
-                rewards_dfs.append(rewards_df)
-                time_dfs.append(time_df)
+        # Remove the / at the end of the environment name for matplotlib title
+        title_environment = environment.rstrip('/')
 
-            # Calculate the average rewards and time
-            avg_rewards_df = pd.concat(rewards_dfs).groupby(level=0).mean()
-            avg_time_df = pd.concat(time_dfs).groupby(level=0).mean()
+        # Now you can use learner_dirs to parse the tensorboard logs and plot the data
+        if separate:
+            for name, dirs in learner_dirs.items():
+                rewards_dfs = []
+                time_dfs = []
+                for dir in dirs:
+                    rewards_df, time_df = parse_tensorboard_logs(os.path.join(env_logdir, dir))
+                    rewards_dfs.append(rewards_df)
+                    time_dfs.append(time_df)
 
-            # Plot the data
+                # Calculate the average rewards and time
+                avg_rewards_df = pd.concat(rewards_dfs).groupby(level=0).mean()
+                avg_time_df = pd.concat(time_dfs).groupby(level=0).mean()
+
+                # Plot the data
+                plt.figure(figsize=(10, 5))
+
+                plt.subplot(1, 2, 1)
+                plt.plot(avg_rewards_df['step'], avg_rewards_df['value'])
+                plt.title(f'Mean reward of {name} in {title_environment} environment')
+
+                plt.subplot(1, 2, 2)
+                plt.plot(avg_time_df['step'], avg_time_df['value'])
+                plt.title(f'{name} Time')
+
+                # Adjust spacing between the subplots
+                plt.subplots_adjust(wspace=0.5)
+
+                plt.show()
+        else:
             plt.figure(figsize=(10, 5))
 
-            plt.subplot(1, 2, 1)
-            plt.plot(avg_rewards_df['step'], avg_rewards_df['value'])
-            plt.title(f'{name} Rewards')
+            for name, dirs in learner_dirs.items():
+                rewards_dfs = []
+                time_dfs = []
+                for dir in dirs:
+                    rewards_df, time_df = parse_tensorboard_logs(os.path.join(env_logdir, dir))
+                    rewards_dfs.append(rewards_df)
+                    time_dfs.append(time_df)
 
-            plt.subplot(1, 2, 2)
-            plt.plot(avg_time_df['step'], avg_time_df['value'])
-            plt.title(f'{name} Time')
-            plt.show()
-    else:
-        plt.figure(figsize=(10, 5))
+                # Calculate the average rewards and time
+                avg_rewards_df = pd.concat(rewards_dfs).groupby(level=0).mean()
+                avg_time_df = pd.concat(time_dfs).groupby(level=0).mean()
 
-        for name, dirs in learner_dirs.items():
-            rewards_dfs = []
-            time_dfs = []
+                plt.subplot(1, 2, 1)
+                plt.plot(avg_rewards_df['step'], avg_rewards_df['value'], label=name)
+                plt.title(f'Mean reward in {title_environment} environment')
 
-            for dir in dirs:
-                rewards_df, time_df = parse_tensorboard_logs(os.path.join(logdir, dir))
-                rewards_dfs.append(rewards_df)
-                time_dfs.append(time_df)
+                plt.subplot(1, 2, 2)
+                plt.plot(avg_time_df['step'], avg_time_df['value'], label=name)
+                plt.title(f'{name} Time')
 
-            # Calculate the average rewards and time
-            avg_rewards_df = pd.concat(rewards_dfs).groupby(level=0).mean()
-            avg_time_df = pd.concat(time_dfs).groupby(level=0).mean()
+            # Add a legend to the plot
+            plt.legend()
 
-            plt.subplot(1, 2, 1)
-            plt.plot(avg_rewards_df['step'], avg_rewards_df['value'], label=name)
-            plt.title('Rewards')
-
-            plt.subplot(1, 2, 2)
-            plt.plot(avg_time_df['step'], avg_time_df['value'], label=name)
-            plt.title('Time')
-
-        # Add a legend to the plot
-        plt.legend()
-
-    # Display the plot
-    plt.show()
+        # Display the plot
+        plt.show()
 
 
 # You can also download a trained expert from HuggingFace:
