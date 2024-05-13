@@ -1,22 +1,137 @@
 import os
+import re
 import sys
+from typing import Optional, List
 
-import numpy as np
 import gymnasium as gym
-
+import numpy as np
+import pandas as pd
 from gymnasium.wrappers import TimeLimit
-
+from imitation.data.wrappers import RolloutInfoWrapper
+from imitation.policies.serialize import load_policy
+from matplotlib import pyplot as plt
 from seals.util import AutoResetWrapper
-
 from stable_baselines3 import PPO
 from stable_baselines3.common.atari_wrappers import AtariWrapper
 from stable_baselines3.common.base_class import SelfBaseAlgorithm
 from stable_baselines3.common.env_util import make_vec_env
-from stable_baselines3.common.vec_env import VecFrameStack, VecEnv
 from stable_baselines3.common.evaluation import evaluate_policy
+from stable_baselines3.common.vec_env import VecFrameStack
+from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
 
-from imitation.data.wrappers import RolloutInfoWrapper
-from imitation.policies.serialize import load_policy
+
+def visualize_training(logdir: str, separate: bool = False, selected_learners: Optional[List[str]] = None):
+    """
+    Visualize the training of multiple learners in the same plot.
+
+    It looks for learners or the perfect agent, and plots the average rewards and time of each of them,
+    according to the tensorboard logs stored in the logdir directory.
+
+    Args:
+        logdir: (str) the directory where the tensorboard logs are stored
+        separate: (bool) whether to plot the data of each learner separately or not
+        selected_learners: (list) list of learners to include in the plot
+
+    Returns: void
+    """
+
+    def parse_tensorboard_logs(logdir):
+        event_acc = EventAccumulator(logdir)
+        event_acc.Reload()
+
+        # Retrieve the scalars you are interested in
+        rewards = event_acc.Scalars('rollout/ep_rew_mean')
+        time = event_acc.Scalars('time/fps')
+
+        # Convert to pandas DataFrame
+        rewards_df = pd.DataFrame(rewards)
+        time_df = pd.DataFrame(time)
+
+        return rewards_df, time_df
+
+    # Get a list of all directories in the log directory
+    dirs = os.listdir(logdir)
+    # Regular expression to match 'learner_' followed by two digits, an underscore, and one or more digits
+    # and 'perfect_agent_' followed by one or more digits
+    pattern_learner = re.compile(r'(learner_\d+)_(\d+)')
+    pattern_perfect_agent = re.compile(r'(perfect_agent)_(\d+)')
+    # Group the directories by the learner name
+    learner_dirs = {}
+
+    for dir in dirs:
+        match_learner = pattern_learner.match(dir)
+        match_perfect_agent = pattern_perfect_agent.match(dir)
+        if match_learner:
+            learner_name = match_learner.group(1)
+            if learner_name not in learner_dirs:
+                learner_dirs[learner_name] = []
+            learner_dirs[learner_name].append(dir)
+        elif match_perfect_agent:
+            learner_name = match_perfect_agent.group(1)
+            if learner_name not in learner_dirs:
+                learner_dirs[learner_name] = []
+            learner_dirs[learner_name].append(dir)
+
+    # If selected_learners is specified, filter learner_dirs to only include the selected learners
+    if selected_learners is not None:
+        learner_dirs = {learner_name: dirs for learner_name, dirs in learner_dirs.items()
+                        if learner_name in selected_learners}
+
+    # Now you can use learner_dirs to parse the tensorboard logs and plot the data
+    if separate:
+        for name, dirs in learner_dirs.items():
+            rewards_dfs = []
+            time_dfs = []
+
+            for dir in dirs:
+                rewards_df, time_df = parse_tensorboard_logs(os.path.join(logdir, dir))
+                rewards_dfs.append(rewards_df)
+                time_dfs.append(time_df)
+
+            # Calculate the average rewards and time
+            avg_rewards_df = pd.concat(rewards_dfs).groupby(level=0).mean()
+            avg_time_df = pd.concat(time_dfs).groupby(level=0).mean()
+
+            # Plot the data
+            plt.figure(figsize=(10, 5))
+
+            plt.subplot(1, 2, 1)
+            plt.plot(avg_rewards_df['step'], avg_rewards_df['value'])
+            plt.title(f'{name} Rewards')
+
+            plt.subplot(1, 2, 2)
+            plt.plot(avg_time_df['step'], avg_time_df['value'])
+            plt.title(f'{name} Time')
+            plt.show()
+    else:
+        plt.figure(figsize=(10, 5))
+
+        for name, dirs in learner_dirs.items():
+            rewards_dfs = []
+            time_dfs = []
+
+            for dir in dirs:
+                rewards_df, time_df = parse_tensorboard_logs(os.path.join(logdir, dir))
+                rewards_dfs.append(rewards_df)
+                time_dfs.append(time_df)
+
+            # Calculate the average rewards and time
+            avg_rewards_df = pd.concat(rewards_dfs).groupby(level=0).mean()
+            avg_time_df = pd.concat(time_dfs).groupby(level=0).mean()
+
+            plt.subplot(1, 2, 1)
+            plt.plot(avg_rewards_df['step'], avg_rewards_df['value'], label=name)
+            plt.title('Rewards')
+
+            plt.subplot(1, 2, 2)
+            plt.plot(avg_time_df['step'], avg_time_df['value'], label=name)
+            plt.title('Time')
+
+        # Add a legend to the plot
+        plt.legend()
+
+    # Display the plot
+    plt.show()
 
 
 # You can also download a trained expert from HuggingFace:
@@ -100,7 +215,7 @@ def evaluate(model: SelfBaseAlgorithm, env_name, n_envs=1, num_episodes=10, verb
                     ep_len += 1
 
                     if n_envs == 1:
-                        # For atari the return reward is not the atari score
+                        # For atari, the return reward is not the atari score,
                         # so we have to get it from the infos dict
                         if is_atari and infos is not None and verbose:
                             episode_infos = infos[0].get("episode")
@@ -136,7 +251,8 @@ def evaluate(model: SelfBaseAlgorithm, env_name, n_envs=1, num_episodes=10, verb
     if verbose and len(episode_rewards) > 0:
         print(f"{len(episode_rewards)} Episodes")
         print(
-            f"Mean reward: {np.mean(episode_rewards):.2f} +/- {np.std(episode_rewards):.2f}, Num episodes: {num_episodes}")
+            f"Mean reward: {np.mean(episode_rewards):.2f} +/- {np.std(episode_rewards):.2f}, "
+            f"Num episodes: {num_episodes}")
 
     if verbose and len(episode_lengths) > 0:
         print(f"Mean episode length: {np.mean(episode_lengths):.2f} +/- {np.std(episode_lengths):.2f}")
