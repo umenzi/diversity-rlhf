@@ -19,6 +19,7 @@ module load py-torch
 module load py-pip
 
 pip install imitation
+pip install optuna
 pip install stable-baselines3[extra]
 
-srun ./lunar_lander.py > output.log
+srun ./tuning/lunar/tuning_ppo.py > output.log

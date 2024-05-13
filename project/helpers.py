@@ -82,7 +82,7 @@ def visualize_training(logdir: str, environments: List[str], separate: bool = Fa
         if selected_learners is not None:
             learner_dirs = {learner_name: dirs for learner_name, dirs in learner_dirs.items() if learner_name in selected_learners}
 
-        # Remove the / at the end of the environment name for matplotlib title
+        # Remove the "/" at the end of the environment name for matplotlib title
         title_environment = environment.rstrip('/')
 
         # Now you can use learner_dirs to parse the tensorboard logs and plot the data
