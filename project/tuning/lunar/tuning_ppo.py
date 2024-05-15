@@ -1,4 +1,5 @@
 import numpy as np
+import torch as th
 import optuna
 from stable_baselines3 import PPO
 from stable_baselines3.common.evaluation import evaluate_policy
@@ -9,6 +10,7 @@ from project import helpers
 rng = np.random.default_rng(0)
 venv = helpers.get_lunar_lander_env(16)
 n_epochs = 4
+device = th.device("cuda" if th.cuda.is_available() else "cpu")
 
 
 def objective(trial: optuna.Trial):
@@ -24,6 +26,7 @@ def objective(trial: optuna.Trial):
         n_epochs=n_epochs,
         learning_rate=trial.suggest_float("learning_rate", 25e-5, 1e-3),
         clip_range=trial.suggest_float("clip_range", 0.1, 0.3, step=0.05),
+        device=device,
     )
 
     for epoch in range(n_epochs):  # Assuming you have 4 epochs as defined in n_epochs
