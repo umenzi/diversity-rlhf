@@ -15,6 +15,7 @@ from stable_baselines3.common.logger import configure
 from stable_baselines3.ppo import MlpPolicy
 
 import helpers
+import project.environments
 from project.train_preference_comparisons import train_preference_comparisons
 
 # We train agents for a total of 1_000_000 steps
@@ -51,7 +52,7 @@ logdir = "logs/"
 
 rng = np.random.default_rng(0)
 
-venv = helpers.get_lunar_lander_env(16)
+venv = project.environments.get_lunar_lander_env(16)
 
 # Hyperparameters from:
 # https://huggingface.co/sb3/ppo-LunarLander-v2

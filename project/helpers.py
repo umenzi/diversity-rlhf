@@ -3,27 +3,31 @@ import re
 import sys
 from typing import Optional, List
 
-import gymnasium as gym
 import numpy as np
 import pandas as pd
 
 from matplotlib import pyplot as plt
 
-from gymnasium.wrappers import TimeLimit
-from seals.util import AutoResetWrapper
-
-from imitation.data.wrappers import RolloutInfoWrapper
 from imitation.policies.serialize import load_policy
 
 
 from stable_baselines3 import PPO
-from stable_baselines3.common.atari_wrappers import AtariWrapper
 from stable_baselines3.common.base_class import SelfBaseAlgorithm
-from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.evaluation import evaluate_policy
-from stable_baselines3.common.vec_env import VecFrameStack
 
 from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
+
+from project.environments import get_lunar_lander_env
+
+
+def print_reward_info(reward_1, reward_2, a_1: str, a_2: str, n_episodes: int):
+    print(
+        f"{a_1} mean reward: {np.mean(reward_1):.2f} +/- "
+        f"{np.std(reward_1) / np.sqrt(100):.2f}, Num episodes: {n_episodes}")
+    print(
+        f"{a_2} mean reward: {np.mean(reward_2):.2f} +/- "
+        f"{np.std(reward_2) / np.sqrt(100):.2f}, Num episodes: {n_episodes}")
+
 
 def visualize_training(logdir: str, environments: List[str], separate: bool = False, selected_learners: Optional[List[str]] = None):
     """
@@ -144,29 +148,6 @@ def visualize_training(logdir: str, environments: List[str], separate: bool = Fa
         plt.show()
 
 
-# You can also download a trained expert from HuggingFace:
-def download_model(env_name, env):
-    print("Downloading a pretrained model from Hugging Face.")
-
-    expert = load_policy(
-        "ppo-huggingface",
-        organization="HumanCompatibleAI",
-        env_name=env_name,  # e.g., "seals-CartPole-v0"
-        venv=env,
-    )
-
-    return expert
-
-
-def print_reward_info(reward_1, reward_2, a_1: str, a_2: str, n_episodes: int):
-    print(
-        f"{a_1} mean reward: {np.mean(reward_1):.2f} +/- "
-        f"{np.std(reward_1) / np.sqrt(100):.2f}, Num episodes: {n_episodes}")
-    print(
-        f"{a_2} mean reward: {np.mean(reward_2):.2f} +/- "
-        f"{np.std(reward_2) / np.sqrt(100):.2f}, Num episodes: {n_episodes}")
-
-
 def evaluate(model: SelfBaseAlgorithm, env_name, n_envs=1, num_episodes=10, verbose: bool = False,
              time_steps: int = 1000, render=True, deterministic=True) -> float:
     """
@@ -285,6 +266,20 @@ def evaluate(model: SelfBaseAlgorithm, env_name, n_envs=1, num_episodes=10, verb
         return reward_mean
 
 
+# You can also download a trained expert from HuggingFace:
+def download_model(env_name, env):
+    print("Downloading a pretrained model from Hugging Face.")
+
+    expert = load_policy(
+        "ppo-huggingface",
+        organization="HumanCompatibleAI",
+        env_name=env_name,  # e.g., "seals-CartPole-v0"
+        venv=env,
+    )
+
+    return expert
+
+
 def save_model(model):
     # Create (if necessary) directory to store models and logs
     model_name = "PPO"
@@ -306,56 +301,6 @@ def save_model(model):
     for i in range(1, 2):  # increase this range too for better performance
         model.learn(total_timesteps=time_steps, reset_num_timesteps=False, tb_log_name=model_name)
         model.save(f"{models_dir}/{time_steps * i}")
-
-
-def get_atari_env():
-    # Here we ensure that our environment has constant-length episodes by resetting
-    # it when done, and running until 100 time steps have elapsed.
-    # For real training, you will want a much longer time limit.
-    def constant_length_asteroids(num_steps, render_mode="rgb_array"):
-        atari_env = gym.make("AsteroidsNoFrameskip-v4", render_mode=render_mode)
-        preprocessed_env = AtariWrapper(atari_env)
-        endless_env = AutoResetWrapper(preprocessed_env)
-        limited_env = TimeLimit(endless_env, max_episode_steps=num_steps)
-
-        return RolloutInfoWrapper(limited_env)
-
-    # For real training, you will want a vectorized environment with 8 environments in parallel.
-    # This can be done by passing in n_envs=8 as an argument to make_vec_env.
-    # The seed needs to be set to 1 for reproducibility and also to avoid win32
-    # np.random.randint high bound error.
-    venv = make_vec_env(
-        constant_length_asteroids,
-        # env_kwargs={"num_steps": 100, "render_mode": "human"},
-        env_kwargs={"num_steps": 100},
-        seed=1
-    )
-
-    return VecFrameStack(venv, n_stack=4)
-
-
-def get_lunar_lander_env(n_envs: int = 1):
-    # Here we ensure that our environment has constant-length episodes by resetting
-    # it when done, and running until 1000 time steps have elapsed.
-    # For real training, you will want a much longer time limit.
-    def constant_length_asteroids(num_steps, render_mode="rgb_array"):
-        lunar_env = gym.make("LunarLander-v2", render_mode=render_mode)
-        endless_env = AutoResetWrapper(lunar_env)
-        limited_env = TimeLimit(endless_env, max_episode_steps=num_steps)
-
-        return RolloutInfoWrapper(limited_env)
-
-    # For real training, you will want a vectorized environment with 8 environments in parallel.
-    # This can be done by passing in n_envs=8 as an argument to make_vec_env.
-    # The seed needs to be set to 1 for reproducibility and also to avoid win32
-    # np.random.randint high bound error.
-    return make_vec_env(
-        constant_length_asteroids,
-        # env_kwargs={"num_steps": 100, "render_mode": "human"},
-        env_kwargs={"num_steps": 1000},
-        seed=1,
-        n_envs=n_envs,
-    )
 
 
 def load_model(venv) -> SelfBaseAlgorithm:
