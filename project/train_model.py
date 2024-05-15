@@ -34,11 +34,11 @@ agent = PPO(
 )
 
 reward_net, main_trainer, results = train_preference_comparisons(venv, agent, 16, 15, 2, fragment_length=10,
-                                                               transition_oversampling=1, initial_comparison_frac=0.1,
-                                                               reward_trainer_epochs=3,
-                                                               allow_variable_horizon=False,
-                                                               initial_epoch_multiplier=1, rng=rng,
-                                                               reward_type=CnnRewardNet)
+                                                                 transition_oversampling=1, initial_comparison_frac=0.1,
+                                                                 reward_trainer_epochs=3,
+                                                                 allow_variable_horizon=False,
+                                                                 initial_epoch_multiplier=1, rng=rng,
+                                                                 reward_type=CnnRewardNet)
 
 """We can now wrap the environment with the learned reward model, shaped by the policy's learned value function. Note
 that if we were training this for real, we would want to normalize the output of the reward net as well as the value

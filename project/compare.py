@@ -11,7 +11,6 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.ppo import MlpPolicy
 
-
 # Hyperparameters based on:
 # https://github.com/HumanCompatibleAI/imitation/blob/a8b079c469bb145d1954814f22488adff944aa0d/tests/algorithms/test_preference_comparisons.py#L42
 
@@ -79,13 +78,13 @@ print("We train a good (but not perfect) expert")
 
 expert_reward_net, expert_pref_comparisons, expert_result = (
     train_preference_comparisons(env=venv, agent=expert,
-                               total_timesteps=5_000,
-                               total_comparisons=200,
-                               num_iterations=2,
-                               fragment_length=2,
-                               transition_oversampling=2,
-                               initial_epoch_multiplier=2,
-                               rng=rng))
+                                 total_timesteps=5_000,
+                                 total_comparisons=200,
+                                 num_iterations=2,
+                                 fragment_length=2,
+                                 transition_oversampling=2,
+                                 initial_epoch_multiplier=2,
+                                 rng=rng))
 
 # expert_result["reward_loss"] (> 0.0), expert_result["reward_accuracy"] (> 0.0, <= 1.0)
 
@@ -105,13 +104,13 @@ print("We train a not-quite-expert")
 
 not_expert_reward_net, not_expert_pref_comparisons, not_expert_result = (
     train_preference_comparisons(env=venv, agent=not_expert,
-                               total_timesteps=5_000,
-                               total_comparisons=200,
-                               num_iterations=2,
-                               fragment_length=2,
-                               transition_oversampling=2,
-                               initial_epoch_multiplier=2,
-                               rng=rng))
+                                 total_timesteps=5_000,
+                                 total_comparisons=200,
+                                 num_iterations=2,
+                                 fragment_length=2,
+                                 transition_oversampling=2,
+                                 initial_epoch_multiplier=2,
+                                 rng=rng))
 
 # not_expert_result["reward_loss"] (> 0.0), not_expert_result["reward_accuracy"] (> 0.0, <= 1.0)
 

@@ -7,7 +7,6 @@ from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.ppo import MlpPolicy
 
 import project.environments
-from project import helpers
 from project.train_preference_comparisons import get_preference_comparisons
 
 rng = np.random.default_rng(0)
