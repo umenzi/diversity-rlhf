@@ -7,7 +7,7 @@ Code for a Bachelor thesis, where we aim to analyse the impact of diversity in R
 To install the required packages, run the following command:
 
 ```bash
-pip install -r requirements.txt.txt
+pip install -r requirements.txt
 ```
 
 ## Usage
