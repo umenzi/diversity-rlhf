@@ -192,94 +192,97 @@ def evaluate(model: SelfBaseAlgorithm, env_name, n_envs=1, num_episodes=10, verb
     else:
         raise Exception("Invalid environment name")
 
-    episode_reward = 0.0
-    episode_rewards, episode_lengths = [], []
-    ep_len = 0
-    successes = []
-    episode_start = np.ones((n_envs,), dtype=bool)
-
     if render:
+        episode_reward = 0.0
+        episode_rewards, episode_lengths = [], []
+        ep_len = 0
+        successes = []
+        episode_start = np.ones((n_envs,), dtype=bool)
+        obs = vec_env.reset()
+        done = np.array([False] * vec_env.num_envs)
+
         # This function will only work for a single Environment More info about vectorized environments:
         # https://stable-baselines3.readthedocs.io/en/master/guide/vec_envs.html
 
         try:
             for _ in range(time_steps):
-                done = np.array([False] * vec_env.num_envs)
-                obs = vec_env.reset()
+                # _states are only useful when using LSTM policies
+                action, _states = model.predict(obs, deterministic=deterministic, episode_start=episode_start)
+                # here, action, rewards and dones are arrays
+                # because we are using vectorized env
+                # also note that the step only returns a 4-tuple, as the env that is returned
+                # by `model.get_env()` is an sb3 vecenv that wraps the >v0.26 API
+                obs, reward, done, infos = vec_env.step(action)
 
-                while not done.all():
-                    # _states are only useful when using LSTM policies
-                    action, _states = model.predict(obs, deterministic=deterministic, episode_start=episode_start)
-                    # here, action, rewards and dones are arrays
-                    # because we are using vectorized env
-                    # also note that the step only returns a 4-tuple, as the env that is returned
-                    # by `model.get_env()` is an sb3 vecenv that wraps the >v0.26 API
-                    obs, reward, done, infos = vec_env.step(action)
+                episode_start = done
 
-                    episode_start = done
+                # Render view
+                vec_env.render("human")
 
-                    # Render view
-                    vec_env.render("human")
+                if done:
+                    obs = vec_env.reset()
 
-                    episode_reward += reward[0]
-                    ep_len += 1
+                episode_reward += reward[0]
+                ep_len += 1
 
-                    if n_envs == 1:
-                        # For atari, the return reward is not the atari score,
-                        # so we have to get it from the infos dict
-                        if is_atari and infos is not None and verbose:
-                            episode_infos = infos[0].get("episode")
-                            if episode_infos is not None:
-                                print(f"Atari Episode Score: {episode_infos['r']:.2f}")
-                                print("Atari Episode Length", episode_infos["l"])
+                if n_envs == 1:
+                    # For atari, the return reward is not the atari score,
+                    # so we have to get it from the infos dict
+                    if is_atari and infos is not None and verbose:
+                        episode_infos = infos[0].get("episode")
+                        if episode_infos is not None:
+                            print(f"Atari Episode Score: {episode_infos['r']:.2f}")
+                            print("Atari Episode Length", episode_infos["l"])
 
-                        if done and not is_atari and verbose:
-                            # NOTE: for env using VecNormalize, the mean reward
-                            # is a normalized reward when `--norm_reward` flag is passed
-                            print(f"Episode Reward: {episode_reward:.2f}")
-                            print("Episode Length", ep_len)
-                            episode_rewards.append(episode_reward)
-                            episode_lengths.append(ep_len)
-                            episode_reward = 0.0
-                            ep_len = 0
+                    if done and not is_atari and verbose:
+                        # NOTE: for env using VecNormalize, the mean reward
+                        # is a normalized reward when `--norm_reward` flag is passed
+                        print(f"Episode Reward: {episode_reward:.2f}")
+                        print("Episode Length", ep_len)
+                        episode_rewards.append(episode_reward)
+                        episode_lengths.append(ep_len)
+                        episode_reward = 0.0
+                        ep_len = 0
 
-                        # Reset also when the goal is achieved when using HER
-                        if done and infos[0].get("is_success") is not None:
-                            if verbose:
-                                print("Success?", infos[0].get("is_success", False))
+                    # Reset also when the goal is achieved when using HER
+                    if done and infos[0].get("is_success") is not None:
+                        if verbose:
+                            print("Success?", infos[0].get("is_success", False))
 
-                            if infos[0].get("is_success") is not None:
-                                successes.append(infos[0].get("is_success", False))
-                                episode_reward, ep_len = 0.0, 0
+                        if infos[0].get("is_success") is not None:
+                            successes.append(infos[0].get("is_success", False))
+                            episode_reward, ep_len = 0.0, 0
         except KeyboardInterrupt:
             print("Evaluation interrupted by user.")
             pass
 
-    if verbose and len(successes) > 0:
-        print(f"Success rate: {100 * np.mean(successes):.2f}%")
+        if verbose and len(successes) > 0:
+            print(f"Success rate: {100 * np.mean(successes):.2f}%")
 
-    if verbose and len(episode_rewards) > 0:
-        print(f"{len(episode_rewards)} Episodes")
-        print(
-            f"Mean reward: {np.mean(episode_rewards):.2f} +/- {np.std(episode_rewards):.2f}, "
-            f"Num episodes: {num_episodes}")
+        if verbose and len(episode_rewards) > 0:
+            print(f"{len(episode_rewards)} Episodes")
+            print(
+                f"Mean reward: {np.mean(episode_rewards):.2f} +/- {np.std(episode_rewards):.2f}, "
+                f"Num episodes: {num_episodes}")
 
-    if verbose and len(episode_lengths) > 0:
-        print(f"Mean episode length: {np.mean(episode_lengths):.2f} +/- {np.std(episode_lengths):.2f}")
+        if verbose and len(episode_lengths) > 0:
+            print(f"Mean episode length: {np.mean(episode_lengths):.2f} +/- {np.std(episode_lengths):.2f}")
 
-    # TODO: I guess we should remove the following
-    reward_mean, reward_std = evaluate_policy(
-        model.policy,
-        vec_env,
-        num_episodes,
-        render=render,
-    )
+        return np.mean(episode_rewards) if len(episode_rewards) > 0 else 0.0
 
-    reward_stderr = reward_std / np.sqrt(num_episodes)
+    else:  # if not render
+        reward_mean, reward_std = evaluate_policy(
+            model.policy,
+            vec_env,
+            num_episodes,
+            render=render,
+        )
 
-    print(f"Mean reward: {reward_mean:.2f} +/- {reward_stderr:.2f}, Num episodes: {num_episodes}")
+        reward_stderr = reward_std / np.sqrt(num_episodes)
 
-    return reward_mean
+        print(f"Mean reward: {reward_mean:.2f} +/- {reward_stderr:.2f}, Num episodes: {num_episodes}")
+
+        return reward_mean
 
 
 def save_model(model):
