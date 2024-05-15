@@ -18,7 +18,7 @@ from imitation.algorithms import preference_comparisons
 from imitation.algorithms.preference_comparisons import PreferenceComparisons, PreferenceGatherer
 from imitation.data import rollout
 from imitation.data.types import TrajectoryWithRewPair
-from imitation.rewards.reward_nets import BasicRewardNet
+from imitation.rewards.reward_nets import BasicRewardNet, RewardEnsemble
 from imitation.scripts.config.train_preference_comparisons import (
     train_preference_comparisons_ex,
 )
@@ -195,6 +195,7 @@ def train_preference_comparisons(
         conflicting_prob: float = 0,
         temperature: float = 1,
         discount_factor: float = 1,
+        ensemble: bool = False,
 ) -> tuple[BasicRewardNet, PreferenceComparisons, dict[str, Mapping[str, float] | Any] | Mapping[str, Any]]:
     """Train a reward model using preference comparisons.
 
@@ -262,6 +263,7 @@ def train_preference_comparisons(
                 work the exact same as SyntheticGatherer). If 1, all preferences are conflicting.
         temperature: the preferences are sampled from a softmax, this is the temperature used for sampling.
         discount_factor: discount factor that is used to compute how good a fragment is.
+        ensemble: whether to use an ensemble of reward models
 
     Returns:
         Rollout statistics from trained policy.
@@ -271,13 +273,20 @@ def train_preference_comparisons(
     """
 
     logs_dir = "logs/"
-    reward_net, agent_trainer, main_trainer = get_preference_comparisons(env, agent, num_iterations, comparison_queue_size,
-                                                          trajectory_path, reward_trainer_epochs, fragment_length,
-                                                          transition_oversampling, initial_comparison_frac,
-                                                          initial_epoch_multiplier, exploration_frac, active_selection,
-                                                          active_selection_oversampling, uncertainty_on,
-                                                          allow_variable_horizon, query_schedule, rng, n_episodes_eval,
-                                                          reward_type, conflicting_prob, temperature, discount_factor)
+    reward_net, agent_trainer, main_trainer = get_preference_comparisons(env, agent, num_iterations,
+                                                                         comparison_queue_size,
+                                                                         trajectory_path, reward_trainer_epochs,
+                                                                         fragment_length,
+                                                                         transition_oversampling,
+                                                                         initial_comparison_frac,
+                                                                         initial_epoch_multiplier, exploration_frac,
+                                                                         active_selection,
+                                                                         active_selection_oversampling, uncertainty_on,
+                                                                         allow_variable_horizon, query_schedule, rng,
+                                                                         n_episodes_eval,
+                                                                         reward_type, conflicting_prob, temperature,
+                                                                         discount_factor,
+                                                                         ensemble)
 
     def save_callback(iteration_num):
         if checkpoint_interval > 0 and iteration_num % checkpoint_interval == 0:
@@ -339,6 +348,7 @@ def get_preference_comparisons(
         conflicting_prob: float = 0,
         temperature: float = 1,
         discount_factor: float = 1,
+        ensemble: bool = False,
 ) -> Tuple[BasicRewardNet, preference_comparisons.AgentTrainer, PreferenceComparisons]:
     """Creates an untrained reward model using preference comparisons.
 
@@ -399,6 +409,7 @@ def get_preference_comparisons(
                 work the exact same as SyntheticGatherer). If 1, all preferences are conflicting.
         temperature: the preferences are sampled from a softmax, this is the temperature used for sampling.
         discount_factor: discount factor that is used to compute how good a fragment is.
+        ensemble: whether to use an ensemble of reward models
 
     Returns:
         The (untrained) reward network, agent trainer, and the main RHLF trainer
@@ -431,9 +442,19 @@ def get_preference_comparisons(
                                             conflicting_prob=conflicting_prob, discount_factor=discount_factor)
 
     if reward_type is None:
-        reward_net = BasicRewardNet(
-            env.observation_space, env.action_space
-        ).to(device)
+        if ensemble:
+            reward_net = RewardEnsemble(
+                env.observation_space,
+                env.action_space,
+                members=[
+                    BasicRewardNet(env.observation_space, env.action_space)
+                    for _ in range(3)  # we use 3 reward ensembles
+                ]
+            ).to(device)
+        else:
+            reward_net = BasicRewardNet(
+                env.observation_space, env.action_space
+            ).to(device)
     else:
         reward_net = reward_type(
             env.observation_space, env.action_space
@@ -454,13 +475,22 @@ def get_preference_comparisons(
         )
 
     # reward trainer is a class that trains a basic reward model on the preferences.
-    reward_trainer = preference_comparisons.BasicRewardTrainer(
-        preference_model=preference_model,
-        loss=preference_comparisons.CrossEntropyRewardLoss(),
-        rng=rng,
-        epochs=reward_trainer_epochs,
-        custom_logger=custom_logger,
-    )
+    if ensemble:
+        reward_trainer = preference_comparisons.EnsembleTrainer(
+            preference_model=preference_model,
+            loss=preference_comparisons.CrossEntropyRewardLoss(),
+            rng=rng,
+            epochs=reward_trainer_epochs,
+            custom_logger=custom_logger,
+        )
+    else:
+        reward_trainer = preference_comparisons.BasicRewardTrainer(
+            preference_model=preference_model,
+            loss=preference_comparisons.CrossEntropyRewardLoss(),
+            rng=rng,
+            epochs=reward_trainer_epochs,
+            custom_logger=custom_logger,
+        )
 
     if trajectory_path is None:
         # Setting the logger here is not necessary (PreferenceComparisons takes care

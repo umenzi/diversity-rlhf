@@ -56,7 +56,7 @@ def objective(trial: optuna.Trial):
         # We train the reward model based on the human feedback
         results = main_trainer.train(
             20_000 // n_epochs,
-            200,
+            100,
         )
 
         accuracy, _ = evaluate_policy(
