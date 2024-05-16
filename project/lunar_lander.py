@@ -57,7 +57,7 @@ def train_agent(agent: SelfBaseAlgorithm, agent_name):
 
         # After every 1000 training steps, we evaluate the agent
         mean_reward, std_reward = evaluate_policy(agent.policy, evaluation_env, n_eval_episodes=10)
-        wandb.log({f"{agent_name}_eval_mean_reward": mean_reward, f"{agent_name}_eval_std_reward": std_reward})
+        wandb.log({f"eval_mean_reward": mean_reward, f"eval_std_reward": std_reward})
 
 
 device = th.device("cuda" if th.cuda.is_available() else "cpu")
