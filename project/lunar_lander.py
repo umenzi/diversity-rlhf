@@ -1,3 +1,5 @@
+import wandb
+
 import numpy as np
 import torch as th
 import pandas as pd
@@ -13,6 +15,8 @@ from stable_baselines3.common.callbacks import BaseCallback, EvalCallback
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.logger import configure
 from stable_baselines3.ppo import MlpPolicy
+from wandb.apis.public import Run
+from wandb.integration.sb3 import WandbCallback
 
 import helpers
 import project.environments
@@ -39,8 +43,21 @@ def train_agent(agent: SelfBaseAlgorithm, agent_name):
     print(f"Training {agent_name}")
 
     for i in range(1, ITERATIONS):  # set to 1_000_000 time steps in total for better performance
-        agent.learn(total_timesteps=TIME_STEPS, reset_num_timesteps=False, tb_log_name=agent_name)
-        agent.save(f"{environment_dir}{models_dir}{agent_name}/{TIME_STEPS * i}")
+        model_path = f"{environment_dir}{models_dir}{agent_name}/{TIME_STEPS * i}"
+
+        agent.learn(total_timesteps=TIME_STEPS, reset_num_timesteps=False, tb_log_name=agent_name,
+                    callback=WandbCallback(
+                        gradient_save_freq=100,
+                        model_save_freq=0,  # we do not save the model while training,
+                                            # only at the end after completing the training
+                        model_save_path=model_path,
+                        verbose=1,  # 0 = no output, 1 = info messages, "classic output", >= 2 = debug mode
+                    ))
+        agent.save(model_path)
+
+        # After every 1000 training steps, we evaluate the agent
+        mean_reward, std_reward = evaluate_policy(agent.policy, evaluation_env, n_eval_episodes=10)
+        wandb.log({f"{agent_name}_eval_mean_reward": mean_reward, f"{agent_name}_eval_std_reward": std_reward})
 
 
 device = th.device("cuda" if th.cuda.is_available() else "cpu")
@@ -51,15 +68,21 @@ models_dir = "models/"
 # Directory where the tensorboard logs are stored
 logdir = "logs/"
 
-rng = np.random.default_rng(0)
-
 venv = project.environments.get_lunar_lander_env(16)
 
-# Hyperparameters from:
+evaluation_env = project.environments.get_lunar_lander_env(1)
+
+# Hyperparameters to log in wandb
+config = {
+    "policy_type": "MlpPolicy",
+    "total_timesteps": 10_000,
+    "env_name": "LunarLander-v2",
+}
+
+# Hyperparameters obtained with Optuna, initially inspired by:
 # https://huggingface.co/sb3/ppo-LunarLander-v2
 
-results = []
-num_experiments = 1
+num_experiments = 3
 
 # Parameters of RL
 seed = 0
@@ -87,6 +110,18 @@ exploration_frac = 0.05
 
 # Run the experiments
 for i in range(num_experiments):
+    # We change the random seed in every experiment
+    rng = np.random.default_rng(i * 10)
+
+    run = wandb.init(
+        project="rlhf_lunar",
+        name=f"perfect_agent_{i}",
+        config=config,
+        sync_tensorboard=True,  # auto-upload sb3's tensorboard metrics
+        monitor_gym=False,  # auto-upload the videos of agents playing the game
+        save_code=False,  # optional
+    )
+
     perfect_agent = PPO(
         policy=MlpPolicy,
         env=venv,
@@ -102,6 +137,17 @@ for i in range(num_experiments):
         tensorboard_log=tensorboard_log,
     )
     train_agent(perfect_agent, "perfect_agent")
+
+    run.finish()
+
+    run = wandb.init(
+        project="rlhf_lunar",
+        name=f"learner_0_{i}",
+        config=config,
+        sync_tensorboard=True,  # auto-upload sb3's tensorboard metrics
+        monitor_gym=False,  # auto-upload the videos of agents playing the game
+        save_code=False,  # optional
+    )
 
     (reward_net_0, main_trainer_0, results_0) = (
         train_preference_comparisons(venv, perfect_agent,
@@ -137,6 +183,17 @@ for i in range(num_experiments):
     )
     train_agent(learner_0, "learner_0")
 
+    run.finish()
+
+    run = wandb.init(
+        project="rlhf_lunar",
+        name=f"learner_25_{i}",
+        config=config,
+        sync_tensorboard=True,  # auto-upload sb3's tensorboard metrics
+        monitor_gym=False,  # auto-upload the videos of agents playing the game
+        save_code=False,  # optional
+    )
+
     (reward_net_25, main_trainer_25, results_25) = (
         train_preference_comparisons(venv, perfect_agent,
                                      total_timesteps=total_timesteps,
@@ -170,6 +227,17 @@ for i in range(num_experiments):
         tensorboard_log=tensorboard_log,
     )
     train_agent(learner_25, "learner_25")
+
+    run.finish()
+
+    run = wandb.init(
+        project="rlhf_lunar",
+        name=f"learner_40_{i}",
+        config=config,
+        sync_tensorboard=True,  # auto-upload sb3's tensorboard metrics
+        monitor_gym=False,  # auto-upload the videos of agents playing the game
+        save_code=False,  # optional
+    )
 
     (reward_net_40, main_trainer_40, results_40) = (
         train_preference_comparisons(venv, perfect_agent,
@@ -205,6 +273,17 @@ for i in range(num_experiments):
     )
     train_agent(learner_40, "learner_40")
 
+    run.finish()
+
+    run = wandb.init(
+        project="rlhf_lunar",
+        name=f"learner_50_{i}",
+        config=config,
+        sync_tensorboard=True,  # auto-upload sb3's tensorboard metrics
+        monitor_gym=False,  # auto-upload the videos of agents playing the game
+        save_code=False,  # optional
+    )
+
     (reward_net_50, main_trainer_50, results_50) = (
         train_preference_comparisons(venv, perfect_agent,
                                      total_timesteps=total_timesteps,
@@ -238,6 +317,17 @@ for i in range(num_experiments):
         tensorboard_log=tensorboard_log,
     )
     train_agent(learner_50, "learner_50")
+
+    run.finish()
+
+    run = wandb.init(
+        project="rlhf_lunar",
+        name=f"learner_75_{i}",
+        config=config,
+        sync_tensorboard=True,  # auto-upload sb3's tensorboard metrics
+        monitor_gym=False,  # auto-upload the videos of agents playing the game
+        save_code=False,  # optional
+    )
 
     (reward_net_75, main_trainer_75, results_75) = (
         train_preference_comparisons(venv, perfect_agent,
@@ -273,6 +363,17 @@ for i in range(num_experiments):
     )
     train_agent(learner_75, "learner_75")
 
+    run.finish()
+
+    run = wandb.init(
+        project="rlhf_lunar",
+        name=f"learner_100_{i}",
+        config=config,
+        sync_tensorboard=True,  # auto-upload sb3's tensorboard metrics
+        monitor_gym=False,  # auto-upload the videos of agents playing the game
+        save_code=False,  # optional
+    )
+
     (reward_net_100, main_trainer_100, results_100) = (
         train_preference_comparisons(venv, perfect_agent,
                                      total_timesteps=total_timesteps,
@@ -307,9 +408,7 @@ for i in range(num_experiments):
     )
     train_agent(learner_100, "learner_100")
 
-# Average the results
-results = sum(results) / num_experiments
-print(f"Average results over {num_experiments} experiments: {results}")
+    run.finish()
 
 # helpers.evaluate(learner_0, num_episodes=10, deterministic=True, render=False, env_name="lunar")
 
@@ -343,6 +442,6 @@ print(f"Average results over {num_experiments} experiments: {results}")
 #             print(f"{name1} is {'significantly better' if significant else 'NOT significantly better'} than {name2}.")
 
 
-project.graphs.visualize_training(logdir, [environment_dir], False)
+# project.graphs.visualize_training(logdir, [environment_dir], False)
 
 venv.close()

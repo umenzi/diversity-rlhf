@@ -35,7 +35,9 @@ def evaluate(model: SelfBaseAlgorithm, env_name, n_envs=1, num_episodes=10, verb
     :param verbose: (bool) Whether to print additional information
     :param time_steps: (int) number of time steps to run the evaluation
     :param render: (bool) Whether to render the environment or not. This can slow down the evaluation
-    :param deterministic: (bool) Whether to use deterministic or stochastic actions
+    :param deterministic: (bool) Whether to use deterministic or stochastic actions.
+        For stochastic policies such as PPO and A"C, it is recommended that deterministic=True,
+        will lead to a better performance
 
     :return: (float) Mean reward for the last num_episodes
     """

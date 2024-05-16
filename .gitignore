@@ -3,3 +3,4 @@
 /stable_baselines3_tutorials/logs/*
 .venv
 .idea
+/project/wandb/
