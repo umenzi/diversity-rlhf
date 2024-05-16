@@ -17,10 +17,6 @@ from stable_baselines3.ppo import MlpPolicy
 # Look into TensorBoard:
 # https://stable-baselines3.readthedocs.io/en/master/guide/tensorboard.html
 
-# TODO: Look into reward ensembles:
-# https://github.com/HumanCompatibleAI/imitation/blob/master/src/imitation/rewards/reward_nets.py#L884
-
-
 rng = np.random.default_rng()
 
 venv = make_vec_env("seals/CartPole-v0", rng=rng)

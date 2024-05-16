@@ -1,12 +1,7 @@
 import os
-import re
 import sys
-from typing import Optional, List
 
 import numpy as np
-import pandas as pd
-
-from matplotlib import pyplot as plt
 
 from imitation.policies.serialize import load_policy
 
@@ -14,8 +9,6 @@ from imitation.policies.serialize import load_policy
 from stable_baselines3 import PPO
 from stable_baselines3.common.base_class import SelfBaseAlgorithm
 from stable_baselines3.common.evaluation import evaluate_policy
-
-from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
 
 from project.environments import get_lunar_lander_env
 
@@ -27,125 +20,6 @@ def print_reward_info(reward_1, reward_2, a_1: str, a_2: str, n_episodes: int):
     print(
         f"{a_2} mean reward: {np.mean(reward_2):.2f} +/- "
         f"{np.std(reward_2) / np.sqrt(100):.2f}, Num episodes: {n_episodes}")
-
-
-def visualize_training(logdir: str, environments: List[str], separate: bool = False, selected_learners: Optional[List[str]] = None):
-    """
-    Visualize the training of multiple learners in the same plot.
-
-    Args:
-        logdir: (str) the directory where the tensorboard logs are stored
-        environments: (list) list of environments to include in the plot
-        separate: (bool) whether to plot the data of each learner separately or not
-        selected_learners: (list) list of learners to include in the plot
-
-    Returns: void
-    """
-
-    def parse_tensorboard_logs(logdir):
-        event_acc = EventAccumulator(logdir)
-        event_acc.Reload()
-
-        # Retrieve the scalars you are interested in
-        rewards = event_acc.Scalars('rollout/ep_rew_mean')
-        time = event_acc.Scalars('time/fps')
-
-        # Convert to pandas DataFrame
-        rewards_df = pd.DataFrame(rewards)
-        time_df = pd.DataFrame(time)
-
-        return rewards_df, time_df
-
-    for environment in environments:
-        env_logdir = os.path.join(environment, logdir)
-
-        # Get a list of all directories in the log directory
-        dirs = os.listdir(env_logdir)
-        # Regular expression to match 'learner_' followed by two digits, an underscore, and one or more digits
-        # and 'perfect_agent_' followed by one or more digits
-        pattern_learner = re.compile(r'(learner_\d+)_(\d+)')
-        pattern_perfect_agent = re.compile(r'(perfect_agent)_(\d+)')
-        # Group the directories by the learner name
-        learner_dirs = {}
-
-        for dir in dirs:
-            match_learner = pattern_learner.match(dir)
-            match_perfect_agent = pattern_perfect_agent.match(dir)
-            if match_learner:
-                learner_name = match_learner.group(1)
-                if learner_name not in learner_dirs:
-                    learner_dirs[learner_name] = []
-                learner_dirs[learner_name].append(dir)
-            elif match_perfect_agent:
-                learner_name = match_perfect_agent.group(1)
-                if learner_name not in learner_dirs:
-                    learner_dirs[learner_name] = []
-                learner_dirs[learner_name].append(dir)
-
-        # If selected_learners is specified, filter learner_dirs to only include the selected learners
-        if selected_learners is not None:
-            learner_dirs = {learner_name: dirs for learner_name, dirs in learner_dirs.items() if learner_name in selected_learners}
-
-        # Remove the "/" at the end of the environment name for matplotlib title
-        title_environment = environment.rstrip('/')
-
-        # Now you can use learner_dirs to parse the tensorboard logs and plot the data
-        if separate:
-            for name, dirs in learner_dirs.items():
-                rewards_dfs = []
-                time_dfs = []
-                for dir in dirs:
-                    rewards_df, time_df = parse_tensorboard_logs(os.path.join(env_logdir, dir))
-                    rewards_dfs.append(rewards_df)
-                    time_dfs.append(time_df)
-
-                # Calculate the average rewards and time
-                avg_rewards_df = pd.concat(rewards_dfs).groupby(level=0).mean()
-                avg_time_df = pd.concat(time_dfs).groupby(level=0).mean()
-
-                # Plot the data
-                plt.figure(figsize=(10, 5))
-
-                plt.subplot(1, 2, 1)
-                plt.plot(avg_rewards_df['step'], avg_rewards_df['value'])
-                plt.title(f'Mean reward of {name} in {title_environment} environment')
-
-                plt.subplot(1, 2, 2)
-                plt.plot(avg_time_df['step'], avg_time_df['value'])
-                plt.title(f'{name} Time')
-
-                # Adjust spacing between the subplots
-                plt.subplots_adjust(wspace=0.5)
-
-                plt.show()
-        else:
-            plt.figure(figsize=(10, 5))
-
-            for name, dirs in learner_dirs.items():
-                rewards_dfs = []
-                time_dfs = []
-                for dir in dirs:
-                    rewards_df, time_df = parse_tensorboard_logs(os.path.join(env_logdir, dir))
-                    rewards_dfs.append(rewards_df)
-                    time_dfs.append(time_df)
-
-                # Calculate the average rewards and time
-                avg_rewards_df = pd.concat(rewards_dfs).groupby(level=0).mean()
-                avg_time_df = pd.concat(time_dfs).groupby(level=0).mean()
-
-                plt.subplot(1, 2, 1)
-                plt.plot(avg_rewards_df['step'], avg_rewards_df['value'], label=name)
-                plt.title(f'Mean reward in {title_environment} environment')
-
-                plt.subplot(1, 2, 2)
-                plt.plot(avg_time_df['step'], avg_time_df['value'], label=name)
-                plt.title(f'{name} Time')
-
-            # Add a legend to the plot
-            plt.legend()
-
-        # Display the plot
-        plt.show()
 
 
 def evaluate(model: SelfBaseAlgorithm, env_name, n_envs=1, num_episodes=10, verbose: bool = False,

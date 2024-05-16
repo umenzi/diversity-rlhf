@@ -16,6 +16,7 @@ from stable_baselines3.ppo import MlpPolicy
 
 import helpers
 import project.environments
+import project.graphs
 from project.train_preference_comparisons import train_preference_comparisons
 
 # We train agents for a total of 1_000_000 steps
@@ -342,6 +343,6 @@ print(f"Average results over {num_experiments} experiments: {results}")
 #             print(f"{name1} is {'significantly better' if significant else 'NOT significantly better'} than {name2}.")
 
 
-helpers.visualize_training(logdir, [environment_dir], False)
+project.graphs.visualize_training(logdir, [environment_dir], False)
 
 venv.close()
