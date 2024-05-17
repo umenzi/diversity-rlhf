@@ -47,7 +47,7 @@ def train_agent(agent: SelfBaseAlgorithm, agent_name):
         agent.save(model_path)
 
         # After every 1000 training steps, we evaluate the agent
-        mean_reward, std_reward = evaluate_policy(agent.policy, evaluation_env, n_eval_episodes=10)
+        mean_reward, std_reward = evaluate_policy(agent.policy, eval_venv, n_eval_episodes=10)
         wandb.log({f"eval_mean_reward": mean_reward, f"eval_std_reward": std_reward})
 
 
@@ -62,7 +62,7 @@ for env_id in ENVIRONMENTS:
         # Training environment
         venv = project.environments.get_environment(env_id, 16, seed=seed)
         # We use a separate environment for evaluation
-        evaluation_env = project.environments.get_environment(env_id, 1, seed=seed)
+        eval_venv = project.environments.get_environment(env_id, 1, seed=seed)
         # We update the random number generators of PyTorch, Numpy,
 
         environment_dir = f"{env_id}/"
@@ -372,6 +372,8 @@ for env_id in ENVIRONMENTS:
         train_agent(learner_100, "learner_100")
 
         run.finish()
+        venv.close()
+        eval_venv.close()
 
 # helpers.evaluate(learner_0, num_episodes=10, deterministic=True, render=False, env_name="lunar")
 
@@ -406,5 +408,3 @@ for env_id in ENVIRONMENTS:
 
 
 # project.graphs.visualize_training(CONFIG.logdir, [environment_dir], False)
-
-venv.close()
