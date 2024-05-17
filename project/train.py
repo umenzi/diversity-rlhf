@@ -13,6 +13,7 @@ from stable_baselines3.ppo import MlpPolicy
 from wandb.integration.sb3 import WandbCallback
 
 import helpers
+import Constants
 import project.environments
 import project.graphs
 from Config import CONFIG
@@ -20,12 +21,14 @@ from project.train_preference_comparisons import train_preference_comparisons
 
 """
 TODO:
-- Study what type of gpu use in Delft Blue
 - Hyperparameter tuning
 - Implement evaluation
 """
 
 ENVIRONMENTS = ["lunar", "space", "ant"]
+
+# We log in to wandb using the API key
+wandb.login(key=Constants.API_WANDB_KEY)
 
 
 def train_agent(agent: SelfBaseAlgorithm, agent_name):
