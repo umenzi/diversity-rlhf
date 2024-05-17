@@ -25,8 +25,6 @@ TODO:
 - Implement evaluation
 """
 
-ENVIRONMENTS = ["lunar", "space", "ant"]
-
 # We log in to wandb using the API key
 wandb.login(key=Constants.API_WANDB_KEY)
 
@@ -53,7 +51,7 @@ def train_agent(agent: SelfBaseAlgorithm, agent_name):
 
 
 # Run the experiments
-for env_id in ENVIRONMENTS:
+for env_id in CONFIG.ENVIRONMENTS:
     for i in range(CONFIG.num_experiments):
         # We change the random seed in every experiment
         seed = i * 10
@@ -90,14 +88,14 @@ for env_id in ENVIRONMENTS:
             policy=MlpPolicy,
             env=venv,
             seed=seed,
-            n_steps=CONFIG.ppo.n_steps,
-            batch_size=CONFIG.ppo.batch_size,
-            clip_range=CONFIG.ppo.clip_range,
-            ent_coef=CONFIG.ppo.ent_coef,
-            gamma=CONFIG.ppo.gamma,
-            gae_lambda=CONFIG.ppo.gae_lambda,
-            n_epochs=CONFIG.ppo.n_epochs,
-            learning_rate=CONFIG.ppo.learning_rate,
+            n_steps=CONFIG.ppo[env_id].n_steps,
+            batch_size=CONFIG.ppo[env_id].batch_size,
+            clip_range=CONFIG.ppo[env_id].clip_range,
+            ent_coef=CONFIG.ppo[env_id].ent_coef,
+            gamma=CONFIG.ppo[env_id].gamma,
+            gae_lambda=CONFIG.ppo[env_id].gae_lambda,
+            n_epochs=CONFIG.ppo[env_id].n_epochs,
+            learning_rate=CONFIG.ppo[env_id].learning_rate,
             tensorboard_log=tensorboard_log,
         )
         train_agent(perfect_agent, "perfect_agent")
@@ -115,18 +113,18 @@ for env_id in ENVIRONMENTS:
 
         (reward_net_0, main_trainer_0, results_0) = (
             train_preference_comparisons(venv, perfect_agent,
-                                         total_timesteps=CONFIG.rlhf.total_timesteps,
-                                         total_comparisons=CONFIG.rlhf.total_comparisons,
-                                         num_iterations=CONFIG.rlhf.num_iterations,
+                                         total_timesteps=CONFIG.rlhf[env_id].total_timesteps,
+                                         total_comparisons=CONFIG.rlhf[env_id].total_comparisons,
+                                         num_iterations=CONFIG.rlhf[env_id].num_iterations,
                                          # Set to 60 for better performance
-                                         fragment_length=CONFIG.rlhf.fragment_length,
-                                         transition_oversampling=CONFIG.rlhf.transition_oversampling,
-                                         initial_comparison_frac=CONFIG.rlhf.initial_comparison_frac,
-                                         reward_trainer_epochs=CONFIG.rlhf.reward_trainer_epochs,
-                                         allow_variable_horizon=CONFIG.rlhf.allow_variable_horizon,
-                                         initial_epoch_multiplier=CONFIG.rlhf.initial_epoch_multiplier,
+                                         fragment_length=CONFIG.rlhf[env_id].fragment_length,
+                                         transition_oversampling=CONFIG.rlhf[env_id].transition_oversampling,
+                                         initial_comparison_frac=CONFIG.rlhf[env_id].initial_comparison_frac,
+                                         reward_trainer_epochs=CONFIG.rlhf[env_id].reward_trainer_epochs,
+                                         allow_variable_horizon=CONFIG.rlhf[env_id].allow_variable_horizon,
+                                         initial_epoch_multiplier=CONFIG.rlhf[env_id].initial_epoch_multiplier,
                                          rng=rng,
-                                         exploration_frac=CONFIG.rlhf.exploration_frac,
+                                         exploration_frac=CONFIG.rlhf[env_id].exploration_frac,
                                          conflicting_prob=0.0,
                                          reward_type=BasicRewardNet))
         # We train an agent that sees only the shaped, learned reward
@@ -135,14 +133,14 @@ for env_id in ENVIRONMENTS:
             policy=MlpPolicy,
             env=learned_reward_venv_0,
             seed=seed,
-            n_steps=CONFIG.ppo.n_steps,
-            batch_size=CONFIG.ppo.batch_size,
-            clip_range=CONFIG.ppo.clip_range,
-            ent_coef=CONFIG.ppo.ent_coef,
-            gamma=CONFIG.ppo.gamma,
-            gae_lambda=CONFIG.ppo.gae_lambda,
-            n_epochs=CONFIG.ppo.n_epochs,
-            learning_rate=CONFIG.ppo.learning_rate,
+            n_steps=CONFIG.ppo[env_id].n_steps,
+            batch_size=CONFIG.ppo[env_id].batch_size,
+            clip_range=CONFIG.ppo[env_id].clip_range,
+            ent_coef=CONFIG.ppo[env_id].ent_coef,
+            gamma=CONFIG.ppo[env_id].gamma,
+            gae_lambda=CONFIG.ppo[env_id].gae_lambda,
+            n_epochs=CONFIG.ppo[env_id].n_epochs,
+            learning_rate=CONFIG.ppo[env_id].learning_rate,
             tensorboard_log=tensorboard_log,
         )
         train_agent(learner_0, "learner_0")
@@ -160,18 +158,18 @@ for env_id in ENVIRONMENTS:
 
         (reward_net_25, main_trainer_25, results_25) = (
             train_preference_comparisons(venv, perfect_agent,
-                                         total_timesteps=CONFIG.rlhf.total_timesteps,
-                                         total_comparisons=CONFIG.rlhf.total_comparisons,
-                                         num_iterations=CONFIG.rlhf.num_iterations,
+                                         total_timesteps=CONFIG.rlhf[env_id].total_timesteps,
+                                         total_comparisons=CONFIG.rlhf[env_id].total_comparisons,
+                                         num_iterations=CONFIG.rlhf[env_id].num_iterations,
                                          # Set to 60 for better performance
-                                         fragment_length=CONFIG.rlhf.fragment_length,
-                                         transition_oversampling=CONFIG.rlhf.transition_oversampling,
-                                         initial_comparison_frac=CONFIG.rlhf.initial_comparison_frac,
-                                         reward_trainer_epochs=CONFIG.rlhf.reward_trainer_epochs,
-                                         allow_variable_horizon=CONFIG.rlhf.allow_variable_horizon,
-                                         initial_epoch_multiplier=CONFIG.rlhf.initial_epoch_multiplier,
+                                         fragment_length=CONFIG.rlhf[env_id].fragment_length,
+                                         transition_oversampling=CONFIG.rlhf[env_id].transition_oversampling,
+                                         initial_comparison_frac=CONFIG.rlhf[env_id].initial_comparison_frac,
+                                         reward_trainer_epochs=CONFIG.rlhf[env_id].reward_trainer_epochs,
+                                         allow_variable_horizon=CONFIG.rlhf[env_id].allow_variable_horizon,
+                                         initial_epoch_multiplier=CONFIG.rlhf[env_id].initial_epoch_multiplier,
                                          rng=rng,
-                                         exploration_frac=CONFIG.rlhf.exploration_frac,
+                                         exploration_frac=CONFIG.rlhf[env_id].exploration_frac,
                                          conflicting_prob=0.25,
                                          reward_type=BasicRewardNet))
         # We train an agent that sees only the shaped, learned reward
@@ -180,14 +178,14 @@ for env_id in ENVIRONMENTS:
             policy=MlpPolicy,
             env=learned_reward_venv_25,
             seed=seed,
-            n_steps=CONFIG.ppo.n_steps,
-            batch_size=CONFIG.ppo.batch_size,
-            clip_range=CONFIG.ppo.clip_range,
-            ent_coef=CONFIG.ppo.ent_coef,
-            gamma=CONFIG.ppo.gamma,
-            gae_lambda=CONFIG.ppo.gae_lambda,
-            n_epochs=CONFIG.ppo.n_epochs,
-            learning_rate=CONFIG.ppo.learning_rate,
+            n_steps=CONFIG.ppo[env_id].n_steps,
+            batch_size=CONFIG.ppo[env_id].batch_size,
+            clip_range=CONFIG.ppo[env_id].clip_range,
+            ent_coef=CONFIG.ppo[env_id].ent_coef,
+            gamma=CONFIG.ppo[env_id].gamma,
+            gae_lambda=CONFIG.ppo[env_id].gae_lambda,
+            n_epochs=CONFIG.ppo[env_id].n_epochs,
+            learning_rate=CONFIG.ppo[env_id].learning_rate,
             tensorboard_log=tensorboard_log,
         )
         train_agent(learner_25, "learner_25")
@@ -205,18 +203,18 @@ for env_id in ENVIRONMENTS:
 
         (reward_net_40, main_trainer_40, results_40) = (
             train_preference_comparisons(venv, perfect_agent,
-                                         total_timesteps=CONFIG.rlhf.total_timesteps,
-                                         total_comparisons=CONFIG.rlhf.total_comparisons,
-                                         num_iterations=CONFIG.rlhf.num_iterations,
+                                         total_timesteps=CONFIG.rlhf[env_id].total_timesteps,
+                                         total_comparisons=CONFIG.rlhf[env_id].total_comparisons,
+                                         num_iterations=CONFIG.rlhf[env_id].num_iterations,
                                          # Set to 60 for better performance
-                                         fragment_length=CONFIG.rlhf.fragment_length,
-                                         transition_oversampling=CONFIG.rlhf.transition_oversampling,
-                                         initial_comparison_frac=CONFIG.rlhf.initial_comparison_frac,
-                                         reward_trainer_epochs=CONFIG.rlhf.reward_trainer_epochs,
-                                         allow_variable_horizon=CONFIG.rlhf.allow_variable_horizon,
-                                         initial_epoch_multiplier=CONFIG.rlhf.initial_epoch_multiplier,
+                                         fragment_length=CONFIG.rlhf[env_id].fragment_length,
+                                         transition_oversampling=CONFIG.rlhf[env_id].transition_oversampling,
+                                         initial_comparison_frac=CONFIG.rlhf[env_id].initial_comparison_frac,
+                                         reward_trainer_epochs=CONFIG.rlhf[env_id].reward_trainer_epochs,
+                                         allow_variable_horizon=CONFIG.rlhf[env_id].allow_variable_horizon,
+                                         initial_epoch_multiplier=CONFIG.rlhf[env_id].initial_epoch_multiplier,
                                          rng=rng,
-                                         exploration_frac=CONFIG.rlhf.exploration_frac,
+                                         exploration_frac=CONFIG.rlhf[env_id].exploration_frac,
                                          conflicting_prob=0.40,
                                          reward_type=BasicRewardNet))
         # We train an agent that sees only the shaped, learned reward
@@ -225,14 +223,14 @@ for env_id in ENVIRONMENTS:
             policy=MlpPolicy,
             env=learned_reward_venv_40,
             seed=seed,
-            n_steps=CONFIG.ppo.n_steps,
-            batch_size=CONFIG.ppo.batch_size,
-            clip_range=CONFIG.ppo.clip_range,
-            ent_coef=CONFIG.ppo.ent_coef,
-            gamma=CONFIG.ppo.gamma,
-            gae_lambda=CONFIG.ppo.gae_lambda,
-            n_epochs=CONFIG.ppo.n_epochs,
-            learning_rate=CONFIG.ppo.learning_rate,
+            n_steps=CONFIG.ppo[env_id].n_steps,
+            batch_size=CONFIG.ppo[env_id].batch_size,
+            clip_range=CONFIG.ppo[env_id].clip_range,
+            ent_coef=CONFIG.ppo[env_id].ent_coef,
+            gamma=CONFIG.ppo[env_id].gamma,
+            gae_lambda=CONFIG.ppo[env_id].gae_lambda,
+            n_epochs=CONFIG.ppo[env_id].n_epochs,
+            learning_rate=CONFIG.ppo[env_id].learning_rate,
             tensorboard_log=tensorboard_log,
         )
         train_agent(learner_40, "learner_40")
@@ -250,18 +248,18 @@ for env_id in ENVIRONMENTS:
 
         (reward_net_50, main_trainer_50, results_50) = (
             train_preference_comparisons(venv, perfect_agent,
-                                         total_timesteps=CONFIG.rlhf.total_timesteps,
-                                         total_comparisons=CONFIG.rlhf.total_comparisons,
-                                         num_iterations=CONFIG.rlhf.num_iterations,
+                                         total_timesteps=CONFIG.rlhf[env_id].total_timesteps,
+                                         total_comparisons=CONFIG.rlhf[env_id].total_comparisons,
+                                         num_iterations=CONFIG.rlhf[env_id].num_iterations,
                                          # Set to 60 for better performance
-                                         fragment_length=CONFIG.rlhf.fragment_length,
-                                         transition_oversampling=CONFIG.rlhf.transition_oversampling,
-                                         initial_comparison_frac=CONFIG.rlhf.initial_comparison_frac,
-                                         reward_trainer_epochs=CONFIG.rlhf.reward_trainer_epochs,
-                                         allow_variable_horizon=CONFIG.rlhf.allow_variable_horizon,
-                                         initial_epoch_multiplier=CONFIG.rlhf.initial_epoch_multiplier,
+                                         fragment_length=CONFIG.rlhf[env_id].fragment_length,
+                                         transition_oversampling=CONFIG.rlhf[env_id].transition_oversampling,
+                                         initial_comparison_frac=CONFIG.rlhf[env_id].initial_comparison_frac,
+                                         reward_trainer_epochs=CONFIG.rlhf[env_id].reward_trainer_epochs,
+                                         allow_variable_horizon=CONFIG.rlhf[env_id].allow_variable_horizon,
+                                         initial_epoch_multiplier=CONFIG.rlhf[env_id].initial_epoch_multiplier,
                                          rng=rng,
-                                         exploration_frac=CONFIG.rlhf.exploration_frac,
+                                         exploration_frac=CONFIG.rlhf[env_id].exploration_frac,
                                          conflicting_prob=0.5,
                                          reward_type=BasicRewardNet))
         # We train an agent that sees only the shaped, learned reward
@@ -270,14 +268,14 @@ for env_id in ENVIRONMENTS:
             policy=MlpPolicy,
             env=learned_reward_venv_25,
             seed=seed,
-            n_steps=CONFIG.ppo.n_steps,
-            batch_size=CONFIG.ppo.batch_size,
-            clip_range=CONFIG.ppo.clip_range,
-            ent_coef=CONFIG.ppo.ent_coef,
-            gamma=CONFIG.ppo.gamma,
-            gae_lambda=CONFIG.ppo.gae_lambda,
-            n_epochs=CONFIG.ppo.n_epochs,
-            learning_rate=CONFIG.ppo.learning_rate,
+            n_steps=CONFIG.ppo[env_id].n_steps,
+            batch_size=CONFIG.ppo[env_id].batch_size,
+            clip_range=CONFIG.ppo[env_id].clip_range,
+            ent_coef=CONFIG.ppo[env_id].ent_coef,
+            gamma=CONFIG.ppo[env_id].gamma,
+            gae_lambda=CONFIG.ppo[env_id].gae_lambda,
+            n_epochs=CONFIG.ppo[env_id].n_epochs,
+            learning_rate=CONFIG.ppo[env_id].learning_rate,
             tensorboard_log=tensorboard_log,
         )
         train_agent(learner_50, "learner_50")
@@ -295,18 +293,18 @@ for env_id in ENVIRONMENTS:
 
         (reward_net_75, main_trainer_75, results_75) = (
             train_preference_comparisons(venv, perfect_agent,
-                                         total_timesteps=CONFIG.rlhf.total_timesteps,
-                                         total_comparisons=CONFIG.rlhf.total_comparisons,
-                                         num_iterations=CONFIG.rlhf.num_iterations,
+                                         total_timesteps=CONFIG.rlhf[env_id].total_timesteps,
+                                         total_comparisons=CONFIG.rlhf[env_id].total_comparisons,
+                                         num_iterations=CONFIG.rlhf[env_id].num_iterations,
                                          # Set to 60 for better performance
-                                         fragment_length=CONFIG.rlhf.fragment_length,
-                                         transition_oversampling=CONFIG.rlhf.transition_oversampling,
-                                         initial_comparison_frac=CONFIG.rlhf.initial_comparison_frac,
-                                         reward_trainer_epochs=CONFIG.rlhf.reward_trainer_epochs,
-                                         allow_variable_horizon=CONFIG.rlhf.allow_variable_horizon,
-                                         initial_epoch_multiplier=CONFIG.rlhf.initial_epoch_multiplier,
+                                         fragment_length=CONFIG.rlhf[env_id].fragment_length,
+                                         transition_oversampling=CONFIG.rlhf[env_id].transition_oversampling,
+                                         initial_comparison_frac=CONFIG.rlhf[env_id].initial_comparison_frac,
+                                         reward_trainer_epochs=CONFIG.rlhf[env_id].reward_trainer_epochs,
+                                         allow_variable_horizon=CONFIG.rlhf[env_id].allow_variable_horizon,
+                                         initial_epoch_multiplier=CONFIG.rlhf[env_id].initial_epoch_multiplier,
                                          rng=rng,
-                                         exploration_frac=CONFIG.rlhf.exploration_frac,
+                                         exploration_frac=CONFIG.rlhf[env_id].exploration_frac,
                                          conflicting_prob=0.75,
                                          reward_type=BasicRewardNet))
         # We train an agent that sees only the shaped, learned reward
@@ -315,14 +313,14 @@ for env_id in ENVIRONMENTS:
             policy=MlpPolicy,
             env=learned_reward_venv_75,
             seed=seed,
-            n_steps=CONFIG.ppo.n_steps,
-            batch_size=CONFIG.ppo.batch_size,
-            clip_range=CONFIG.ppo.clip_range,
-            ent_coef=CONFIG.ppo.ent_coef,
-            gamma=CONFIG.ppo.gamma,
-            gae_lambda=CONFIG.ppo.gae_lambda,
-            n_epochs=CONFIG.ppo.n_epochs,
-            learning_rate=CONFIG.ppo.learning_rate,
+            n_steps=CONFIG.ppo[env_id].n_steps,
+            batch_size=CONFIG.ppo[env_id].batch_size,
+            clip_range=CONFIG.ppo[env_id].clip_range,
+            ent_coef=CONFIG.ppo[env_id].ent_coef,
+            gamma=CONFIG.ppo[env_id].gamma,
+            gae_lambda=CONFIG.ppo[env_id].gae_lambda,
+            n_epochs=CONFIG.ppo[env_id].n_epochs,
+            learning_rate=CONFIG.ppo[env_id].learning_rate,
             tensorboard_log=tensorboard_log,
         )
         train_agent(learner_75, "learner_75")
@@ -340,18 +338,18 @@ for env_id in ENVIRONMENTS:
 
         (reward_net_100, main_trainer_100, results_100) = (
             train_preference_comparisons(venv, perfect_agent,
-                                         total_timesteps=CONFIG.rlhf.total_timesteps,
-                                         total_comparisons=CONFIG.rlhf.total_comparisons,
-                                         num_iterations=CONFIG.rlhf.num_iterations,
+                                         total_timesteps=CONFIG.rlhf[env_id].total_timesteps,
+                                         total_comparisons=CONFIG.rlhf[env_id].total_comparisons,
+                                         num_iterations=CONFIG.rlhf[env_id].num_iterations,
                                          # Set to 60 for better performance
-                                         fragment_length=CONFIG.rlhf.fragment_length,
-                                         transition_oversampling=CONFIG.rlhf.transition_oversampling,
-                                         initial_comparison_frac=CONFIG.rlhf.initial_comparison_frac,
-                                         reward_trainer_epochs=CONFIG.rlhf.reward_trainer_epochs,
-                                         allow_variable_horizon=CONFIG.rlhf.allow_variable_horizon,
-                                         initial_epoch_multiplier=CONFIG.rlhf.initial_epoch_multiplier,
+                                         fragment_length=CONFIG.rlhf[env_id].fragment_length,
+                                         transition_oversampling=CONFIG.rlhf[env_id].transition_oversampling,
+                                         initial_comparison_frac=CONFIG.rlhf[env_id].initial_comparison_frac,
+                                         reward_trainer_epochs=CONFIG.rlhf[env_id].reward_trainer_epochs,
+                                         allow_variable_horizon=CONFIG.rlhf[env_id].allow_variable_horizon,
+                                         initial_epoch_multiplier=CONFIG.rlhf[env_id].initial_epoch_multiplier,
                                          rng=rng,
-                                         exploration_frac=CONFIG.rlhf.exploration_frac,
+                                         exploration_frac=CONFIG.rlhf[env_id].exploration_frac,
                                          conflicting_prob=1.0,
                                          reward_type=BasicRewardNet))
         # We train an agent that sees only the shaped, learned reward
@@ -360,14 +358,14 @@ for env_id in ENVIRONMENTS:
             policy=MlpPolicy,
             env=learned_reward_venv_100,
             seed=seed,
-            n_steps=CONFIG.ppo.n_steps,
-            batch_size=CONFIG.ppo.batch_size,
-            clip_range=CONFIG.ppo.clip_range,
-            ent_coef=CONFIG.ppo.ent_coef,
-            gamma=CONFIG.ppo.gamma,
-            gae_lambda=CONFIG.ppo.gae_lambda,
-            n_epochs=CONFIG.ppo.n_epochs,
-            learning_rate=CONFIG.ppo.learning_rate,
+            n_steps=CONFIG.ppo[env_id].n_steps,
+            batch_size=CONFIG.ppo[env_id].batch_size,
+            clip_range=CONFIG.ppo[env_id].clip_range,
+            ent_coef=CONFIG.ppo[env_id].ent_coef,
+            gamma=CONFIG.ppo[env_id].gamma,
+            gae_lambda=CONFIG.ppo[env_id].gae_lambda,
+            n_epochs=CONFIG.ppo[env_id].n_epochs,
+            learning_rate=CONFIG.ppo[env_id].learning_rate,
             tensorboard_log=tensorboard_log,
         )
         train_agent(learner_100, "learner_100")

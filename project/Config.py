@@ -1,21 +1,13 @@
-from typing import List
 from dataclasses import dataclass, field, asdict
+from typing import Union, Dict
 
 import torch as th
 
 
 @dataclass
 class EnvConfig:
-    grid_size: int = 10
-    max_steps: int = 30
-    obs_dist: int = 2
-    # 'OnlyEndReward', 'RelativePosition', 'FlattenObs'
-    wrappers: List[str] = field(default_factory=lambda: ['FlattenObs'])
     vectorized: bool = True
-    tensor_state: bool = False
     render: bool = False
-    reward_configuration: str = 'default'  # default, checkers, positive_stripe, walk_around, +-0.5
-    spawn_distance: int = -1  # -1 means fully random spawns
 
 
 @dataclass
@@ -48,6 +40,24 @@ class PPOConfig:
 
 
 @dataclass
+class LunarPPOConfig(PPOConfig):
+    # specific parameters for the Lunar Lander environment
+    pass
+
+
+@dataclass
+class SpacePPOConfig(PPOConfig):
+    # specific parameters for the Space Invaders environment
+    pass
+
+
+@dataclass
+class AntPPOConfig(PPOConfig):
+    # specific parameters for the Ant Environment
+    pass
+
+
+@dataclass
 class RLHFConfig:
     total_timesteps = 5_000
     total_comparisons = 200
@@ -62,11 +72,33 @@ class RLHFConfig:
 
 
 @dataclass
+class LunarRLHFConfig(RLHFConfig):
+    # specific parameters for the Lunar Lander environment
+    pass
+
+
+@dataclass
+class SpaceRLHFConfig(RLHFConfig):
+    # specific parameters for the Space Invaders environment
+    pass
+
+
+@dataclass
+class AntRLHFConfig(RLHFConfig):
+    # specific parameters for the Ant Environment
+    pass
+
+
+@dataclass
 class Config:
+    ENVIRONMENTS = ["lunar", "space", "ant"]
+
     env: EnvConfig = field(default_factory=EnvConfig)
     ppo_train: PPOTrainConfig = field(default_factory=PPOTrainConfig)
-    ppo: PPOConfig = field(default_factory=PPOConfig)
-    rlhf: RLHFConfig = field(default_factory=RLHFConfig)
+    ppo: Dict[str, Union[LunarPPOConfig, SpacePPOConfig, AntPPOConfig]] = field(
+        default_factory=lambda: {'lunar': LunarPPOConfig(), 'space': SpacePPOConfig(), 'ant': AntPPOConfig})
+    rlhf: Dict[str, Union[LunarRLHFConfig, SpaceRLHFConfig, AntRLHFConfig]] = field(
+        default_factory=lambda: {'lunar': LunarRLHFConfig(), 'space': SpaceRLHFConfig(), 'ant': AntRLHFConfig})
 
     device = th.device("cuda" if th.cuda.is_available() else "cpu")
 
