@@ -5,12 +5,13 @@ from seals.util import AutoResetWrapper
 from stable_baselines3.common.atari_wrappers import AtariWrapper
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.vec_env import VecFrameStack
+import seals
 
 
-def get_atari_env():
+def get_atari_env(n_envs: int = 100, seed: int = 1):
     # Here we ensure that our environment has constant-length episodes by resetting
-    # it when done, and running until 100 time steps have elapsed.
-    # For real training, you will want a much longer time limit.
+    # it when done, and running until num_steps have elapsed.
+    # For real training, you will want a very high time limit (much more than 100).
     def constant_length_asteroids(num_steps, render_mode="rgb_array"):
         atari_env = gym.make("AsteroidsNoFrameskip-v4", render_mode=render_mode)
         preprocessed_env = AtariWrapper(atari_env)
@@ -25,18 +26,18 @@ def get_atari_env():
     # np.random.randint high bound error.
     venv = make_vec_env(
         constant_length_asteroids,
-        # env_kwargs={"num_steps": 100, "render_mode": "human"},
-        env_kwargs={"num_steps": 100},
-        seed=1
+        env_kwargs={"num_steps": 10000},
+        seed=seed,
+        n_envs=n_envs,
     )
 
     return VecFrameStack(venv, n_stack=4)
 
 
-def get_lunar_lander_env(n_envs: int = 1):
+def get_lunar_lander_env(n_envs: int = 100, seed: int = 1):
     # Here we ensure that our environment has constant-length episodes by resetting
     # it when done, and running until 1000 time steps have elapsed.
-    # For real training, you will want a much longer time limit.
+    # For real training, you will want a very high time limit (much more than 100).
     def constant_length_asteroids(num_steps, render_mode="rgb_array"):
         lunar_env = gym.make("LunarLander-v2", render_mode=render_mode)
         endless_env = AutoResetWrapper(lunar_env)
@@ -50,8 +51,26 @@ def get_lunar_lander_env(n_envs: int = 1):
     # np.random.randint high bound error.
     return make_vec_env(
         constant_length_asteroids,
-        # env_kwargs={"num_steps": 100, "render_mode": "human"},
-        env_kwargs={"num_steps": 1000},
-        seed=1,
+        env_kwargs={"num_steps": 10000},
+        seed=seed,
         n_envs=n_envs,
     )
+
+
+def get_ant_env(n_envs: int = 100, seed: int = 1):
+    return make_vec_env(
+        "seals/Ant-v0",
+        seed=seed,
+        n_envs=n_envs,
+    )
+
+
+def get_environment(id: str, n_envs: int = 100, seed: int = 1):
+    if id == "lunar":
+        return get_lunar_lander_env(n_envs, seed)
+    elif id == "space":
+        return get_atari_env(n_envs, seed)
+    elif id == "ant":
+        return get_ant_env(n_envs, seed)
+    else:
+        raise Exception("Environment could not be identified")
