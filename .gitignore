@@ -4,3 +4,6 @@
 .venv
 .idea
 /project/wandb/
+/imitation_tutorials/
+/pytorch_tutorials/
+/stable_baselines3_tutorials/
