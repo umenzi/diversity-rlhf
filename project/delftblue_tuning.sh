@@ -9,7 +9,6 @@
 #SBATCH --gpus-per-task=1
 #SBATCH --mem=7GB
 
-# Alternatively, for partition we can use 'gpu-a100', more powerful (4x with 32 GB RAM instead of 4x with 80 GB RAM)
 
 module load 2023r1
 module load openmpi

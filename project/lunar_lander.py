@@ -22,9 +22,7 @@ from project.train_preference_comparisons import train_preference_comparisons
 TODO:
 - Study what type of gpu use in Delft Blue
 - Hyperparameter tuning
-- Parallelize training (and then add #SBATCH --gpus=2)
 - Implement evaluation
-- Update architecture for several experiments
 """
 
 ENVIRONMENTS = ["lunar", "space", "ant"]
