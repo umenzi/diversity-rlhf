@@ -1,3 +1,6 @@
+import logging
+import sys
+
 import numpy as np
 import pandas as pd
 import wandb
@@ -28,9 +31,14 @@ TODO:
 # We log in to wandb using the API key
 wandb.login(key=Constants.API_WANDB_KEY)
 
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+# We add a handler, so it looks like a normal 'print' in the console
+logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
+
 
 def train_agent(agent: SelfBaseAlgorithm, agent_name):
-    print(f"Training {agent_name}")
+    logging.info(f"Training {agent_name}")
 
     for i in range(1, CONFIG.ppo_train.iterations):  # set to 1_000_000 time steps in total for better performance
         model_path = f"{environment_dir}{CONFIG.models_dir}{agent_name}/{CONFIG.ppo_train.env_steps * i}"
@@ -48,6 +56,23 @@ def train_agent(agent: SelfBaseAlgorithm, agent_name):
         # After every 1000 training steps, we evaluate the agent
         mean_reward, std_reward = evaluate_policy(agent.policy, eval_venv, n_eval_episodes=10)
         wandb.log({f"eval_mean_reward": mean_reward, f"eval_std_reward": std_reward})
+
+
+def initialize_agent(env, seed, tensorboard_log, env_id, agent_name):
+    return PPO(
+        policy=MlpPolicy,
+        env=env,
+        seed=seed,
+        n_steps=CONFIG.ppo[env_id].n_steps,
+        batch_size=CONFIG.ppo[env_id].batch_size,
+        clip_range=CONFIG.ppo[env_id].clip_range,
+        ent_coef=CONFIG.ppo[env_id].ent_coef,
+        gamma=CONFIG.ppo[env_id].gamma,
+        gae_lambda=CONFIG.ppo[env_id].gae_lambda,
+        n_epochs=CONFIG.ppo[env_id].n_epochs,
+        learning_rate=CONFIG.ppo[env_id].learning_rate,
+        tensorboard_log=tensorboard_log,
+    )
 
 
 # Run the experiments
@@ -84,20 +109,7 @@ for env_id in CONFIG.ENVIRONMENTS:
             save_code=False,  # optional
         )
 
-        perfect_agent = PPO(
-            policy=MlpPolicy,
-            env=venv,
-            seed=seed,
-            n_steps=CONFIG.ppo[env_id].n_steps,
-            batch_size=CONFIG.ppo[env_id].batch_size,
-            clip_range=CONFIG.ppo[env_id].clip_range,
-            ent_coef=CONFIG.ppo[env_id].ent_coef,
-            gamma=CONFIG.ppo[env_id].gamma,
-            gae_lambda=CONFIG.ppo[env_id].gae_lambda,
-            n_epochs=CONFIG.ppo[env_id].n_epochs,
-            learning_rate=CONFIG.ppo[env_id].learning_rate,
-            tensorboard_log=tensorboard_log,
-        )
+        perfect_agent = initialize_agent(venv, seed, tensorboard_log, env_id, "perfect_agent")
         train_agent(perfect_agent, "perfect_agent")
 
         run.finish()
@@ -129,20 +141,7 @@ for env_id in CONFIG.ENVIRONMENTS:
                                          reward_type=BasicRewardNet))
         # We train an agent that sees only the shaped, learned reward
         learned_reward_venv_0 = RewardVecEnvWrapper(venv, reward_net_0.predict_processed)
-        learner_0 = PPO(
-            policy=MlpPolicy,
-            env=learned_reward_venv_0,
-            seed=seed,
-            n_steps=CONFIG.ppo[env_id].n_steps,
-            batch_size=CONFIG.ppo[env_id].batch_size,
-            clip_range=CONFIG.ppo[env_id].clip_range,
-            ent_coef=CONFIG.ppo[env_id].ent_coef,
-            gamma=CONFIG.ppo[env_id].gamma,
-            gae_lambda=CONFIG.ppo[env_id].gae_lambda,
-            n_epochs=CONFIG.ppo[env_id].n_epochs,
-            learning_rate=CONFIG.ppo[env_id].learning_rate,
-            tensorboard_log=tensorboard_log,
-        )
+        learner_0 = initialize_agent(learned_reward_venv_0, seed, tensorboard_log, env_id, "learner_0")
         train_agent(learner_0, "learner_0")
 
         run.finish()
@@ -174,20 +173,7 @@ for env_id in CONFIG.ENVIRONMENTS:
                                          reward_type=BasicRewardNet))
         # We train an agent that sees only the shaped, learned reward
         learned_reward_venv_25 = RewardVecEnvWrapper(venv, reward_net_25.predict_processed)
-        learner_25 = PPO(
-            policy=MlpPolicy,
-            env=learned_reward_venv_25,
-            seed=seed,
-            n_steps=CONFIG.ppo[env_id].n_steps,
-            batch_size=CONFIG.ppo[env_id].batch_size,
-            clip_range=CONFIG.ppo[env_id].clip_range,
-            ent_coef=CONFIG.ppo[env_id].ent_coef,
-            gamma=CONFIG.ppo[env_id].gamma,
-            gae_lambda=CONFIG.ppo[env_id].gae_lambda,
-            n_epochs=CONFIG.ppo[env_id].n_epochs,
-            learning_rate=CONFIG.ppo[env_id].learning_rate,
-            tensorboard_log=tensorboard_log,
-        )
+        learner_25 = initialize_agent(learned_reward_venv_25, seed, tensorboard_log, env_id, "learner_25")
         train_agent(learner_25, "learner_25")
 
         run.finish()
@@ -219,20 +205,7 @@ for env_id in CONFIG.ENVIRONMENTS:
                                          reward_type=BasicRewardNet))
         # We train an agent that sees only the shaped, learned reward
         learned_reward_venv_40 = RewardVecEnvWrapper(venv, reward_net_40.predict_processed)
-        learner_40 = PPO(
-            policy=MlpPolicy,
-            env=learned_reward_venv_40,
-            seed=seed,
-            n_steps=CONFIG.ppo[env_id].n_steps,
-            batch_size=CONFIG.ppo[env_id].batch_size,
-            clip_range=CONFIG.ppo[env_id].clip_range,
-            ent_coef=CONFIG.ppo[env_id].ent_coef,
-            gamma=CONFIG.ppo[env_id].gamma,
-            gae_lambda=CONFIG.ppo[env_id].gae_lambda,
-            n_epochs=CONFIG.ppo[env_id].n_epochs,
-            learning_rate=CONFIG.ppo[env_id].learning_rate,
-            tensorboard_log=tensorboard_log,
-        )
+        learner_40 = initialize_agent(learned_reward_venv_40, seed, tensorboard_log, env_id, "learner_40")
         train_agent(learner_40, "learner_40")
 
         run.finish()
@@ -264,20 +237,7 @@ for env_id in CONFIG.ENVIRONMENTS:
                                          reward_type=BasicRewardNet))
         # We train an agent that sees only the shaped, learned reward
         learned_reward_venv_50 = RewardVecEnvWrapper(venv, reward_net_50.predict_processed)
-        learner_50 = PPO(
-            policy=MlpPolicy,
-            env=learned_reward_venv_25,
-            seed=seed,
-            n_steps=CONFIG.ppo[env_id].n_steps,
-            batch_size=CONFIG.ppo[env_id].batch_size,
-            clip_range=CONFIG.ppo[env_id].clip_range,
-            ent_coef=CONFIG.ppo[env_id].ent_coef,
-            gamma=CONFIG.ppo[env_id].gamma,
-            gae_lambda=CONFIG.ppo[env_id].gae_lambda,
-            n_epochs=CONFIG.ppo[env_id].n_epochs,
-            learning_rate=CONFIG.ppo[env_id].learning_rate,
-            tensorboard_log=tensorboard_log,
-        )
+        learner_50 = initialize_agent(learned_reward_venv_50, seed, tensorboard_log, env_id, "learner_50")
         train_agent(learner_50, "learner_50")
 
         run.finish()
@@ -309,20 +269,7 @@ for env_id in CONFIG.ENVIRONMENTS:
                                          reward_type=BasicRewardNet))
         # We train an agent that sees only the shaped, learned reward
         learned_reward_venv_75 = RewardVecEnvWrapper(venv, reward_net_75.predict_processed)
-        learner_75 = PPO(
-            policy=MlpPolicy,
-            env=learned_reward_venv_75,
-            seed=seed,
-            n_steps=CONFIG.ppo[env_id].n_steps,
-            batch_size=CONFIG.ppo[env_id].batch_size,
-            clip_range=CONFIG.ppo[env_id].clip_range,
-            ent_coef=CONFIG.ppo[env_id].ent_coef,
-            gamma=CONFIG.ppo[env_id].gamma,
-            gae_lambda=CONFIG.ppo[env_id].gae_lambda,
-            n_epochs=CONFIG.ppo[env_id].n_epochs,
-            learning_rate=CONFIG.ppo[env_id].learning_rate,
-            tensorboard_log=tensorboard_log,
-        )
+        learner_75 = initialize_agent(learned_reward_venv_75, seed, tensorboard_log, env_id, "learner_75")
         train_agent(learner_75, "learner_75")
 
         run.finish()
@@ -354,20 +301,7 @@ for env_id in CONFIG.ENVIRONMENTS:
                                          reward_type=BasicRewardNet))
         # We train an agent that sees only the shaped, learned reward
         learned_reward_venv_100 = RewardVecEnvWrapper(venv, reward_net_100.predict_processed)
-        learner_100 = PPO(
-            policy=MlpPolicy,
-            env=learned_reward_venv_100,
-            seed=seed,
-            n_steps=CONFIG.ppo[env_id].n_steps,
-            batch_size=CONFIG.ppo[env_id].batch_size,
-            clip_range=CONFIG.ppo[env_id].clip_range,
-            ent_coef=CONFIG.ppo[env_id].ent_coef,
-            gamma=CONFIG.ppo[env_id].gamma,
-            gae_lambda=CONFIG.ppo[env_id].gae_lambda,
-            n_epochs=CONFIG.ppo[env_id].n_epochs,
-            learning_rate=CONFIG.ppo[env_id].learning_rate,
-            tensorboard_log=tensorboard_log,
-        )
+        learner_100 = initialize_agent(learned_reward_venv_100, seed, tensorboard_log, env_id, "learner_100")
         train_agent(learner_100, "learner_100")
 
         run.finish()
@@ -396,14 +330,14 @@ for env_id in CONFIG.ENVIRONMENTS:
 # df = pd.DataFrame(results, index=['Mean Reward', 'Std Reward'])
 
 # Print the DataFrame
-# print(df)
+# logging.info(df)
 
 # Compare each learner with all other learners
 # for name1, reward1 in results.items():
 #     for name2, reward2 in results.items():
 #         if name1 != name2:
 #             significant = is_significant_reward_improvement(reward1, reward2, 0.001)
-#             print(f"{name1} is {'significantly better' if significant else 'NOT significantly better'} than {name2}.")
+#             logging.info(f"{name1} is {'significantly better' if significant else 'NOT significantly better'} than {name2}.")
 
 
 # project.graphs.visualize_training(CONFIG.logdir, [environment_dir], False)
