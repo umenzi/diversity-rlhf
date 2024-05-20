@@ -24,5 +24,6 @@ module load py-pip
 pip install imitation
 pip install optuna
 pip install stable-baselines3[extra]
+pip install wandb
 
 srun tuning/lunar/tuning_rlhf.py > output.log

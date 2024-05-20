@@ -91,7 +91,9 @@ class AntRLHFConfig(RLHFConfig):
 
 @dataclass
 class Config:
-    ENVIRONMENTS = ["lunar", "space", "ant"]
+    # ENVIRONMENTS = ["lunar", "space", "ant"]
+    ENVIRONMENTS = ["lunar"]
+    QUERY_STRATEGIES = ["random", "active"]
 
     env: EnvConfig = field(default_factory=EnvConfig)
     ppo_train: PPOTrainConfig = field(default_factory=PPOTrainConfig)
@@ -103,6 +105,8 @@ class Config:
     device = th.device("cuda" if th.cuda.is_available() else "cpu")
 
     num_experiments = 3
+
+    active_selection_oversampling = 5
 
     # Directory where the trained models (i.e. its weights) are stored
     models_dir = "models/"
