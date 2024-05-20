@@ -3,8 +3,8 @@
 /stable_baselines3_tutorials/logs/*
 .venv
 .idea
-/project/wandb/
+/src/wandb/
 /imitation_tutorials/
 /pytorch_tutorials/
 /stable_baselines3_tutorials/
-/project/Constants.py
+/src/Constants.py

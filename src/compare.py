@@ -1,7 +1,7 @@
 import numpy as np
 
-from project.helpers import print_reward_info
-from project.train_preference_comparisons import train_preference_comparisons
+from src.helpers import print_reward_info
+from src.train_preference_comparisons import train_preference_comparisons
 
 from imitation.rewards.reward_wrapper import RewardVecEnvWrapper
 from imitation.testing.reward_improvement import is_significant_reward_improvement

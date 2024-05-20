@@ -9,7 +9,7 @@ from imitation.algorithms import preference_comparisons
 from imitation.rewards import reward_nets
 from imitation.util import util
 
-from project.train_preference_comparisons import ConflictingSyntheticGatherer
+from src.train_preference_comparisons import ConflictingSyntheticGatherer
 
 UNCERTAINTY_ON = ["logit", "probability", "label"]
 

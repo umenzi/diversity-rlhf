@@ -10,7 +10,7 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.base_class import SelfBaseAlgorithm
 from stable_baselines3.common.evaluation import evaluate_policy
 
-from project.environments import get_lunar_lander_env
+from src.environments import get_lunar_lander_env
 
 
 def print_reward_info(reward_1, reward_2, a_1: str, a_2: str, n_episodes: int):

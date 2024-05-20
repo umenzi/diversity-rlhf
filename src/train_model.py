@@ -10,8 +10,8 @@ from stable_baselines3 import PPO
 from stable_baselines3.ppo import CnnPolicy
 
 import helpers
-from project.environments import get_atari_env
-from project.train_preference_comparisons import train_preference_comparisons
+from src.environments import get_atari_env
+from src.train_preference_comparisons import train_preference_comparisons
 
 device = th.device("cuda" if th.cuda.is_available() else "cpu")
 

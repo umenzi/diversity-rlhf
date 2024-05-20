@@ -3,12 +3,12 @@ import numpy as np
 from imitation.data import rollout
 
 import helpers
-import project.environments
+import src.environments
 
 rng = np.random.default_rng()
 
 # We load the environment
-venv = project.environments.get_atari_env()
+venv = src.environments.get_atari_env()
 
 # We load the reward environment
 # learned_reward_venv = th.load(rewards_path)

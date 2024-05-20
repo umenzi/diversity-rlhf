@@ -17,10 +17,10 @@ from wandb.integration.sb3 import WandbCallback
 
 import helpers
 import Constants
-import project.environments
-import project.graphs
+import src.environments
+import src.graphs
 from Config import CONFIG
-from project.train_preference_comparisons import train_preference_comparisons
+from src.train_preference_comparisons import train_preference_comparisons
 
 # We log in to wandb using the API key
 wandb.login(key=Constants.API_WANDB_KEY)
@@ -79,9 +79,9 @@ for query_strategy in CONFIG.QUERY_STRATEGIES:
             rng = np.random.default_rng(seed)
 
             # Training environment
-            venv = project.environments.get_environment(env_id, 16, seed=seed)
+            venv = src.environments.get_environment(env_id, 16, seed=seed)
             # We use a separate environment for evaluation
-            eval_venv = project.environments.get_environment(env_id, 1, seed=seed)
+            eval_venv = src.environments.get_environment(env_id, 1, seed=seed)
             # We update the random number generators of PyTorch, Numpy,
 
             environment_dir = f"{env_id}/"
@@ -337,4 +337,4 @@ for query_strategy in CONFIG.QUERY_STRATEGIES:
 #             logging.info(f"{name1} is {'significantly better' if significant else 'NOT significantly better'} than {name2}.")
 
 
-# project.graphs.visualize_training(CONFIG.logdir, [environment_dir], False)
+# src.graphs.visualize_training(CONFIG.logdir, [environment_dir], False)
