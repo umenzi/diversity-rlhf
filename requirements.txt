@@ -4,4 +4,5 @@ stable_baselines3>=2.3.0
 matplotlib>=3.9.0
 pandas>=2.0.0
 numpy>=1.26.0
+swig>=4.0.0
 gymnasium[all]>=0.29.1
