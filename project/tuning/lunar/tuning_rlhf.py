@@ -1,6 +1,8 @@
 import numpy as np
 import optuna
+import pandas as pd
 import torch as th
+
 from imitation.rewards.reward_nets import BasicRewardNet
 from stable_baselines3 import PPO
 from stable_baselines3.common.evaluation import evaluate_policy
@@ -94,3 +96,6 @@ if __name__ == "__main__":
     print("  Params: ")
     for key, value in trial.params.items():
         print("    {}: {}".format(key, value))
+
+    # Save the result to a CSV file
+    pd.DataFrame([study.best_params]).to_csv("lunar_best_params.csv", index=False)

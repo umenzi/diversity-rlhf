@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import torch as th
 import optuna
 from stable_baselines3 import PPO
@@ -67,3 +68,6 @@ if __name__ == "__main__":
     print("  Params: ")
     for key, value in trial.params.items():
         print("    {}: {}".format(key, value))
+
+    # Save the result to a CSV file
+    pd.DataFrame([study.best_params]).to_csv("lunar_best_params.csv", index=False)

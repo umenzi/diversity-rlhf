@@ -25,4 +25,4 @@ pip install imitation
 pip install optuna
 pip install stable-baselines3[extra]
 
-srun ./tuning/lunar/tuning_rlhf.py > output.log
+srun tuning/lunar/tuning_rlhf.py > output.log
