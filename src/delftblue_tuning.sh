@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 #SBATCH --job-name="train_rl_models"
 #SBATCH --partition=gpu
@@ -26,4 +26,4 @@ pip install optuna
 pip install stable-baselines3[extra]
 pip install wandb
 
-srun tuning/lunar/tuning_rlhf.py > output.log
+srun python tuning/lunar/tuning_rlhf.py > output.log
