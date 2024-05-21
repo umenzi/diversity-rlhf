@@ -26,4 +26,6 @@ pip install optuna
 pip install stable-baselines3[extra]
 pip install wandb
 
+export PYTHONPATH="${PYTHONPATH}:/scratch/jpaezfranco/diversity-rlhf"
+
 srun python tuning/lunar/tuning_rlhf.py > output.log
