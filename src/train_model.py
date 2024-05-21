@@ -15,7 +15,7 @@ from src.train_preference_comparisons import train_preference_comparisons
 
 device = th.device("cuda" if th.cuda.is_available() else "cpu")
 
-rng = np.random.default_rng()
+seed = 20
 
 venv = get_atari_env()
 
@@ -33,11 +33,11 @@ agent = PPO(
     n_epochs=4,
 )
 
-reward_net, main_trainer, results = train_preference_comparisons(venv, agent, 16, 15, 2, fragment_length=10,
+reward_net, main_trainer, results = train_preference_comparisons(venv, "lunar", agent, 16, 15, 2, fragment_length=10,
                                                                  transition_oversampling=1, initial_comparison_frac=0.1,
                                                                  reward_trainer_epochs=3,
                                                                  allow_variable_horizon=False,
-                                                                 initial_epoch_multiplier=1, rng=rng,
+                                                                 initial_epoch_multiplier=1, seed=20,
                                                                  reward_type=CnnRewardNet)
 
 """We can now wrap the environment with the learned reward model, shaped by the policy's learned value function. Note

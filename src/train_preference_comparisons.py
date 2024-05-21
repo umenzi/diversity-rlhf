@@ -27,6 +27,8 @@ from scipy import special
 from stable_baselines3.common import type_aliases
 from stable_baselines3.common.vec_env import VecEnv
 
+from helpers import initialize_agent
+
 
 def save_model(
         agent_trainer: preference_comparisons.AgentTrainer,
@@ -170,6 +172,7 @@ class ConflictingSyntheticGatherer(PreferenceGatherer):
 @train_preference_comparisons_ex.main
 def train_preference_comparisons(
         env: VecEnv,
+        env_id: str,
         agent,
         total_timesteps: int,
         total_comparisons: int,
@@ -189,18 +192,20 @@ def train_preference_comparisons(
         allow_variable_horizon: bool = False,
         checkpoint_interval: int = 0,
         query_schedule: Union[str, type_aliases.Schedule] = "hyperbolic",
-        rng: np.random.Generator = None,
         n_episodes_eval: int = 10,
         reward_type=None,
         conflicting_prob: float = 0,
         temperature: float = 1,
         discount_factor: float = 1,
         ensemble: bool = False,
+        seed: int | None = None,
+        tensorboard_log: str | None = None,
 ) -> tuple[BasicRewardNet, PreferenceComparisons, dict[str, Mapping[str, float] | Any] | Mapping[str, Any]]:
     """Train a reward model using preference comparisons.
 
     Args:
         env: the vectorized gym environment
+        env_id: the id of the environment
         agent: the algorithm to use (e.g. PPO, DQN, etc.)
         total_timesteps: number of environment interaction steps
         total_comparisons: number of preferences to gather in total
@@ -264,6 +269,8 @@ def train_preference_comparisons(
         temperature: the preferences are sampled from a softmax, this is the temperature used for sampling.
         discount_factor: discount factor that is used to compute how good a fragment is.
         ensemble: whether to use an ensemble of reward models
+        seed: random seed
+        tensorboard_log: the directory to save the tensorboard logs
 
     Returns:
         Rollout statistics from trained policy.
@@ -273,20 +280,18 @@ def train_preference_comparisons(
     """
 
     logs_dir = "logs/"
-    reward_net, agent_trainer, main_trainer = get_preference_comparisons(env, agent, num_iterations,
-                                                                         comparison_queue_size,
-                                                                         trajectory_path, reward_trainer_epochs,
-                                                                         fragment_length,
+    reward_net, agent_trainer, main_trainer = get_preference_comparisons(env, env_id, agent, num_iterations,
+                                                                         comparison_queue_size, trajectory_path,
+                                                                         reward_trainer_epochs, fragment_length,
                                                                          transition_oversampling,
                                                                          initial_comparison_frac,
                                                                          initial_epoch_multiplier, exploration_frac,
                                                                          active_selection,
                                                                          active_selection_oversampling, uncertainty_on,
-                                                                         allow_variable_horizon, query_schedule, rng,
-                                                                         n_episodes_eval,
-                                                                         reward_type, conflicting_prob, temperature,
-                                                                         discount_factor,
-                                                                         ensemble)
+                                                                         allow_variable_horizon, query_schedule,
+                                                                         n_episodes_eval, reward_type, conflicting_prob,
+                                                                         temperature, discount_factor, ensemble,
+                                                                         seed, tensorboard_log)
 
     def save_callback(iteration_num):
         if checkpoint_interval > 0 and iteration_num % checkpoint_interval == 0:
@@ -325,36 +330,25 @@ def train_preference_comparisons(
 
 
 @train_preference_comparisons_ex.main
-def get_preference_comparisons(
-        env: VecEnv,
-        agent,
-        num_iterations: int,
-        comparison_queue_size: Optional[int] = None,
-        trajectory_path: Optional[str] = None,
-        reward_trainer_epochs: int = 3,
-        fragment_length: int = 100,
-        transition_oversampling: float = 1,
-        initial_comparison_frac: float = 0.1,
-        initial_epoch_multiplier: float = 200.0,
-        exploration_frac: float = 0.0,
-        active_selection: bool = False,
-        active_selection_oversampling: int = 2,
-        uncertainty_on: str = "logit",
-        allow_variable_horizon: bool = False,
-        query_schedule: Union[str, type_aliases.Schedule] = "hyperbolic",
-        rng: np.random.Generator = None,
-        n_episodes_eval: int = 10,
-        reward_type=None,
-        conflicting_prob: float = 0,
-        temperature: float = 1,
-        discount_factor: float = 1,
-        ensemble: bool = False,
-) -> Tuple[BasicRewardNet, preference_comparisons.AgentTrainer, PreferenceComparisons]:
+def get_preference_comparisons(env: VecEnv, env_id: str, agent, num_iterations: int,
+                               comparison_queue_size: Optional[int] = None,
+                               trajectory_path: Optional[str] = None, reward_trainer_epochs: int = 3,
+                               fragment_length: int = 100, transition_oversampling: float = 1,
+                               initial_comparison_frac: float = 0.1, initial_epoch_multiplier: float = 200.0,
+                               exploration_frac: float = 0.0, active_selection: bool = False,
+                               active_selection_oversampling: int = 2, uncertainty_on: str = "logit",
+                               allow_variable_horizon: bool = False,
+                               query_schedule: Union[str, type_aliases.Schedule] = "hyperbolic",
+                               n_episodes_eval: int = 10, reward_type=None,
+                               conflicting_prob: float = 0, temperature: float = 1, discount_factor: float = 1,
+                               ensemble: bool = False, seed: int | None = None, tensorboard_log: str | None = None) -> Tuple[
+    BasicRewardNet, preference_comparisons.AgentTrainer, PreferenceComparisons]:
     """Creates an untrained reward model using preference comparisons.
 
     Args:
         env: the vectorized gym environment
-        agent: the algorithm to use (e.g. PPO, DQN, etc.)
+        env_id: the id of the environment
+        agent: the algorithm to use (e.g. PPO, DQN, etc.) If None, a PPO agent with the params in CONFIG will be used.
         num_iterations: number of times to train the agent against the reward model
             and then train the reward model against newly gathered preferences.
         comparison_queue_size: the maximum number of comparisons to keep in the
@@ -399,7 +393,6 @@ def get_preference_comparisons(
             be allocated to each iteration. "Hyperbolic" and "inverse_quadratic"
             apportion fewer queries to later iterations when the policy is assumed
             to be better and more stable.
-        rng: the random number generator (if None, a random one will be created)
         n_episodes_eval: The number of episodes to average over when calculating
             the average episode reward of the imitation policy for return. Only relevant
             if trajectory_path is not None.
@@ -410,6 +403,8 @@ def get_preference_comparisons(
         temperature: the preferences are sampled from a softmax, this is the temperature used for sampling.
         discount_factor: discount factor that is used to compute how good a fragment is.
         ensemble: whether to use an ensemble of reward models
+        seed: random seed
+        tensorboard_log: the directory to save the tensorboard logs
 
     Returns:
         The (untrained) reward network, agent trainer, and the main RHLF trainer
@@ -418,10 +413,8 @@ def get_preference_comparisons(
         ValueError: Inconsistency between config and deserialized policy normalization.
     """
     assert env is not None
-    assert agent is not None
 
-    if rng is None:
-        rng = np.random.default_rng()
+    rng = np.random.default_rng(seed)
 
     logs_dir = "logs/"
     custom_logger = imit_logger.configure(logs_dir, ["csv", "tensorboard"])
@@ -493,6 +486,9 @@ def get_preference_comparisons(
         )
 
     if trajectory_path is None:
+        if agent is None:
+            agent = initialize_agent(env, seed, tensorboard_log, env_id)
+
         # Setting the logger here is not necessary (PreferenceComparisons takes care
         # of it automatically), but it avoids creating unnecessary loggers.
         agent_trainer = preference_comparisons.AgentTrainer(

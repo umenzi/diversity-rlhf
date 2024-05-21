@@ -11,8 +11,8 @@ from stable_baselines3.ppo import MlpPolicy
 import src.environments
 from src.train_preference_comparisons import get_preference_comparisons
 
-rng = np.random.default_rng(0)
 venv = src.environments.get_lunar_lander_env(16)
+env_id = "lunar"
 n_epochs = 4
 device = th.device("cuda" if th.cuda.is_available() else "cpu")
 
@@ -36,21 +36,15 @@ expert.learn(total_timesteps=20_000)
 
 def objective(trial: optuna.Trial):
     reward_net, agent_trainer, main_trainer = (
-        get_preference_comparisons(venv, expert,
-                                   num_iterations=1,
-                                   # Set to 60 for better performance
+        get_preference_comparisons(venv, env_id, expert, num_iterations=1, seed=0,
+                                   reward_trainer_epochs=trial.suggest_int("reward_trainer_epochs", 1, 11),
                                    fragment_length=trial.suggest_int("fragment_length", 1, 150),
                                    transition_oversampling=trial.suggest_float("transition_oversampling", 0.9, 2.0),
                                    initial_comparison_frac=trial.suggest_float("initial_comparison_frac", 0.01, 1.0),
-                                   reward_trainer_epochs=trial.suggest_int("reward_trainer_epochs", 1, 11),
-                                   allow_variable_horizon=False,
-                                   initial_epoch_multiplier=1,  # we don't tune this yet
-                                   rng=rng,
+                                   initial_epoch_multiplier=1, reward_type=BasicRewardNet, allow_variable_horizon=False,
                                    exploration_frac=trial.suggest_float("exploration_frac", 0.0, 0.5),
-                                   discount_factor=trial.suggest_float("discount_factor", 0.95, 1.0),
-                                   conflicting_prob=0.0,
-                                   temperature=trial.suggest_float("temperature", 0.0, 2.0),
-                                   reward_type=BasicRewardNet))
+                                   conflicting_prob=0.0, temperature=trial.suggest_float("temperature", 0.0, 2.0),
+                                   discount_factor=trial.suggest_float("discount_factor", 0.95, 1.0)))
 
     accuracy = 0
 

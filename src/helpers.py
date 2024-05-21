@@ -2,6 +2,7 @@ import os
 import sys
 
 import numpy as np
+from gymnasium import Env
 
 from imitation.policies.serialize import load_policy
 
@@ -9,7 +10,10 @@ from imitation.policies.serialize import load_policy
 from stable_baselines3 import PPO
 from stable_baselines3.common.base_class import SelfBaseAlgorithm
 from stable_baselines3.common.evaluation import evaluate_policy
+from stable_baselines3.common.vec_env import VecEnv
+from stable_baselines3.ppo import MlpPolicy
 
+from Config import CONFIG
 from src.environments import get_lunar_lander_env
 
 
@@ -196,3 +200,20 @@ def load_model(venv) -> SelfBaseAlgorithm:
     print("Loading a local model.")
 
     return PPO.load(model_path, env=venv)
+
+
+def initialize_agent(env: Env | VecEnv, seed: int | None, tensorboard_log: str | None, env_id: str):
+    return PPO(
+        policy=MlpPolicy,
+        env=env,
+        seed=seed,
+        n_steps=CONFIG.ppo[env_id].n_steps,
+        batch_size=CONFIG.ppo[env_id].batch_size,
+        clip_range=CONFIG.ppo[env_id].clip_range,
+        ent_coef=CONFIG.ppo[env_id].ent_coef,
+        gamma=CONFIG.ppo[env_id].gamma,
+        gae_lambda=CONFIG.ppo[env_id].gae_lambda,
+        n_epochs=CONFIG.ppo[env_id].n_epochs,
+        learning_rate=CONFIG.ppo[env_id].learning_rate,
+        tensorboard_log=tensorboard_log,
+    )

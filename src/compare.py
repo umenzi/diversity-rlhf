@@ -73,7 +73,7 @@ print("We now train two RLHF agents, based on the previous 2 agents")
 print("We train a good (but not perfect) expert")
 
 expert_reward_net, expert_pref_comparisons, expert_result = (
-    train_preference_comparisons(env=venv, agent=expert,
+    train_preference_comparisons(env=venv, env_id="lunar", agent=expert,
                                  total_timesteps=5_000,
                                  total_comparisons=200,
                                  num_iterations=2,
@@ -99,7 +99,7 @@ expert_learner.learn(10_000)  # Use something bigger, like 100_000, for better p
 print("We train a not-quite-expert")
 
 not_expert_reward_net, not_expert_pref_comparisons, not_expert_result = (
-    train_preference_comparisons(env=venv, agent=not_expert,
+    train_preference_comparisons(env=venv, env_id="lunar", agent=None,
                                  total_timesteps=5_000,
                                  total_comparisons=200,
                                  num_iterations=2,

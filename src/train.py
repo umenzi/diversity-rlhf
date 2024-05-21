@@ -1,25 +1,20 @@
 import logging
 import sys
 
-import numpy as np
-import pandas as pd
 import wandb
 from imitation.rewards.reward_nets import (
     BasicRewardNet,
 )
 from imitation.rewards.reward_wrapper import RewardVecEnvWrapper
-from imitation.testing.reward_improvement import is_significant_reward_improvement
-from stable_baselines3 import PPO
 from stable_baselines3.common.base_class import SelfBaseAlgorithm
 from stable_baselines3.common.evaluation import evaluate_policy
-from stable_baselines3.ppo import MlpPolicy
 from wandb.integration.sb3 import WandbCallback
 
-import helpers
 import Constants
 import src.environments
 import src.graphs
 from Config import CONFIG
+from helpers import initialize_agent
 from src.train_preference_comparisons import train_preference_comparisons
 
 # We log in to wandb using the API key
@@ -52,31 +47,12 @@ def train_agent(agent: SelfBaseAlgorithm, agent_name):
         wandb.log({f"eval_mean_reward": mean_reward, f"eval_std_reward": std_reward})
 
 
-def initialize_agent(env, seed, tensorboard_log, env_id):
-    return PPO(
-        policy=MlpPolicy,
-        env=env,
-        seed=seed,
-        n_steps=CONFIG.ppo[env_id].n_steps,
-        batch_size=CONFIG.ppo[env_id].batch_size,
-        clip_range=CONFIG.ppo[env_id].clip_range,
-        ent_coef=CONFIG.ppo[env_id].ent_coef,
-        gamma=CONFIG.ppo[env_id].gamma,
-        gae_lambda=CONFIG.ppo[env_id].gae_lambda,
-        n_epochs=CONFIG.ppo[env_id].n_epochs,
-        learning_rate=CONFIG.ppo[env_id].learning_rate,
-        tensorboard_log=tensorboard_log,
-    )
-
-
 # Run the experiments#
 for query_strategy in CONFIG.QUERY_STRATEGIES:
     for env_id in CONFIG.ENVIRONMENTS:
         for i in range(CONFIG.num_experiments):
             # We change the random seed in every experiment
             seed = i * 10
-
-            rng = np.random.default_rng(seed)
 
             # Training environment
             venv = src.environments.get_environment(env_id, 16, seed=seed)
@@ -119,7 +95,7 @@ for query_strategy in CONFIG.QUERY_STRATEGIES:
             )
 
             (reward_net_0, main_trainer_0, results_0) = (
-                train_preference_comparisons(venv, perfect_agent,
+                train_preference_comparisons(venv, env_id, None,
                                              total_timesteps=CONFIG.rlhf[env_id].total_timesteps,
                                              total_comparisons=CONFIG.rlhf[env_id].total_comparisons,
                                              num_iterations=CONFIG.rlhf[env_id].num_iterations,
@@ -130,12 +106,13 @@ for query_strategy in CONFIG.QUERY_STRATEGIES:
                                              reward_trainer_epochs=CONFIG.rlhf[env_id].reward_trainer_epochs,
                                              allow_variable_horizon=CONFIG.rlhf[env_id].allow_variable_horizon,
                                              initial_epoch_multiplier=CONFIG.rlhf[env_id].initial_epoch_multiplier,
-                                             rng=rng,
+                                             seed=seed,
                                              exploration_frac=CONFIG.rlhf[env_id].exploration_frac,
                                              conflicting_prob=0.0,
                                              active_selection=query_strategy == "active",
                                              active_selection_oversampling=CONFIG.active_selection_oversampling,
-                                             reward_type=BasicRewardNet))
+                                             reward_type=BasicRewardNet,
+                                             tensorboard_log=tensorboard_log))
             # We train an agent that sees only the shaped, learned reward
             learned_reward_venv_0 = RewardVecEnvWrapper(venv, reward_net_0.predict_processed)
             learner_0 = initialize_agent(learned_reward_venv_0, seed, tensorboard_log, env_id)
@@ -153,7 +130,7 @@ for query_strategy in CONFIG.QUERY_STRATEGIES:
             )
 
             (reward_net_25, main_trainer_25, results_25) = (
-                train_preference_comparisons(venv, perfect_agent,
+                train_preference_comparisons(venv, env_id, None,
                                              total_timesteps=CONFIG.rlhf[env_id].total_timesteps,
                                              total_comparisons=CONFIG.rlhf[env_id].total_comparisons,
                                              num_iterations=CONFIG.rlhf[env_id].num_iterations,
@@ -164,10 +141,11 @@ for query_strategy in CONFIG.QUERY_STRATEGIES:
                                              reward_trainer_epochs=CONFIG.rlhf[env_id].reward_trainer_epochs,
                                              allow_variable_horizon=CONFIG.rlhf[env_id].allow_variable_horizon,
                                              initial_epoch_multiplier=CONFIG.rlhf[env_id].initial_epoch_multiplier,
-                                             rng=rng,
+                                             seed=seed,
                                              exploration_frac=CONFIG.rlhf[env_id].exploration_frac,
                                              conflicting_prob=0.25,
-                                             reward_type=BasicRewardNet))
+                                             reward_type=BasicRewardNet,
+                                             tensorboard_log=tensorboard_log))
             # We train an agent that sees only the shaped, learned reward
             learned_reward_venv_25 = RewardVecEnvWrapper(venv, reward_net_25.predict_processed)
             learner_25 = initialize_agent(learned_reward_venv_25, seed, tensorboard_log, env_id)
@@ -185,7 +163,7 @@ for query_strategy in CONFIG.QUERY_STRATEGIES:
             )
 
             (reward_net_40, main_trainer_40, results_40) = (
-                train_preference_comparisons(venv, perfect_agent,
+                train_preference_comparisons(venv, env_id, None,
                                              total_timesteps=CONFIG.rlhf[env_id].total_timesteps,
                                              total_comparisons=CONFIG.rlhf[env_id].total_comparisons,
                                              num_iterations=CONFIG.rlhf[env_id].num_iterations,
@@ -196,10 +174,11 @@ for query_strategy in CONFIG.QUERY_STRATEGIES:
                                              reward_trainer_epochs=CONFIG.rlhf[env_id].reward_trainer_epochs,
                                              allow_variable_horizon=CONFIG.rlhf[env_id].allow_variable_horizon,
                                              initial_epoch_multiplier=CONFIG.rlhf[env_id].initial_epoch_multiplier,
-                                             rng=rng,
+                                             seed=seed,
                                              exploration_frac=CONFIG.rlhf[env_id].exploration_frac,
                                              conflicting_prob=0.40,
-                                             reward_type=BasicRewardNet))
+                                             reward_type=BasicRewardNet,
+                                             tensorboard_log=tensorboard_log))
             # We train an agent that sees only the shaped, learned reward
             learned_reward_venv_40 = RewardVecEnvWrapper(venv, reward_net_40.predict_processed)
             learner_40 = initialize_agent(learned_reward_venv_40, seed, tensorboard_log, env_id)
@@ -217,7 +196,7 @@ for query_strategy in CONFIG.QUERY_STRATEGIES:
             )
 
             (reward_net_50, main_trainer_50, results_50) = (
-                train_preference_comparisons(venv, perfect_agent,
+                train_preference_comparisons(venv, env_id, None,
                                              total_timesteps=CONFIG.rlhf[env_id].total_timesteps,
                                              total_comparisons=CONFIG.rlhf[env_id].total_comparisons,
                                              num_iterations=CONFIG.rlhf[env_id].num_iterations,
@@ -228,10 +207,11 @@ for query_strategy in CONFIG.QUERY_STRATEGIES:
                                              reward_trainer_epochs=CONFIG.rlhf[env_id].reward_trainer_epochs,
                                              allow_variable_horizon=CONFIG.rlhf[env_id].allow_variable_horizon,
                                              initial_epoch_multiplier=CONFIG.rlhf[env_id].initial_epoch_multiplier,
-                                             rng=rng,
+                                             seed=seed,
                                              exploration_frac=CONFIG.rlhf[env_id].exploration_frac,
                                              conflicting_prob=0.5,
-                                             reward_type=BasicRewardNet))
+                                             reward_type=BasicRewardNet,
+                                             tensorboard_log=tensorboard_log))
             # We train an agent that sees only the shaped, learned reward
             learned_reward_venv_50 = RewardVecEnvWrapper(venv, reward_net_50.predict_processed)
             learner_50 = initialize_agent(learned_reward_venv_50, seed, tensorboard_log, env_id)
@@ -249,7 +229,7 @@ for query_strategy in CONFIG.QUERY_STRATEGIES:
             )
 
             (reward_net_75, main_trainer_75, results_75) = (
-                train_preference_comparisons(venv, perfect_agent,
+                train_preference_comparisons(venv, env_id, None,
                                              total_timesteps=CONFIG.rlhf[env_id].total_timesteps,
                                              total_comparisons=CONFIG.rlhf[env_id].total_comparisons,
                                              num_iterations=CONFIG.rlhf[env_id].num_iterations,
@@ -260,10 +240,11 @@ for query_strategy in CONFIG.QUERY_STRATEGIES:
                                              reward_trainer_epochs=CONFIG.rlhf[env_id].reward_trainer_epochs,
                                              allow_variable_horizon=CONFIG.rlhf[env_id].allow_variable_horizon,
                                              initial_epoch_multiplier=CONFIG.rlhf[env_id].initial_epoch_multiplier,
-                                             rng=rng,
+                                             seed=seed,
                                              exploration_frac=CONFIG.rlhf[env_id].exploration_frac,
                                              conflicting_prob=0.75,
-                                             reward_type=BasicRewardNet))
+                                             reward_type=BasicRewardNet,
+                                             tensorboard_log=tensorboard_log))
             # We train an agent that sees only the shaped, learned reward
             learned_reward_venv_75 = RewardVecEnvWrapper(venv, reward_net_75.predict_processed)
             learner_75 = initialize_agent(learned_reward_venv_75, seed, tensorboard_log, env_id)
@@ -281,7 +262,7 @@ for query_strategy in CONFIG.QUERY_STRATEGIES:
             )
 
             (reward_net_100, main_trainer_100, results_100) = (
-                train_preference_comparisons(venv, perfect_agent,
+                train_preference_comparisons(venv, env_id, None,
                                              total_timesteps=CONFIG.rlhf[env_id].total_timesteps,
                                              total_comparisons=CONFIG.rlhf[env_id].total_comparisons,
                                              num_iterations=CONFIG.rlhf[env_id].num_iterations,
@@ -292,10 +273,11 @@ for query_strategy in CONFIG.QUERY_STRATEGIES:
                                              reward_trainer_epochs=CONFIG.rlhf[env_id].reward_trainer_epochs,
                                              allow_variable_horizon=CONFIG.rlhf[env_id].allow_variable_horizon,
                                              initial_epoch_multiplier=CONFIG.rlhf[env_id].initial_epoch_multiplier,
-                                             rng=rng,
+                                             seed=seed,
                                              exploration_frac=CONFIG.rlhf[env_id].exploration_frac,
                                              conflicting_prob=1.0,
-                                             reward_type=BasicRewardNet))
+                                             reward_type=BasicRewardNet,
+                                             tensorboard_log=tensorboard_log))
             # We train an agent that sees only the shaped, learned reward
             learned_reward_venv_100 = RewardVecEnvWrapper(venv, reward_net_100.predict_processed)
             learner_100 = initialize_agent(learned_reward_venv_100, seed, tensorboard_log, env_id)
