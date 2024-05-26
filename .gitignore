@@ -8,3 +8,6 @@
 /pytorch_tutorials/
 /stable_baselines3_tutorials/
 /src/Constants.py
+/src/LunarLander-v2/
+/src/SpaceInvaders-v4/
+/src/logs/
