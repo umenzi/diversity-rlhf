@@ -3,9 +3,9 @@ import sys
 
 import numpy as np
 from gymnasium import Env
+import torch as th
 
 from imitation.policies.serialize import load_policy
-
 
 from stable_baselines3 import PPO
 from stable_baselines3.common.base_class import SelfBaseAlgorithm
@@ -147,12 +147,12 @@ def evaluate(model: SelfBaseAlgorithm, env_name, n_envs=1, num_episodes=10, verb
 
 
 # You can also download a trained expert from HuggingFace:
-def download_model(env_name, env):
+def download_model(env_name, env, organization="HumanCompatibleAI"):
     print("Downloading a pretrained model from Hugging Face.")
 
     expert = load_policy(
         "ppo-huggingface",
-        organization="HumanCompatibleAI",
+        organization=organization,
         env_name=env_name,  # e.g., "seals-CartPole-v0"
         venv=env,
     )
@@ -183,9 +183,8 @@ def save_model(model):
         model.save(f"{models_dir}/{time_steps * i}")
 
 
-def load_model(venv) -> SelfBaseAlgorithm:
+def load_model(venv, model_name="PPO") -> SelfBaseAlgorithm:
     # Create (if necessary) directory to store models and logs
-    model_name = "PPO"
     model_id = "1000.zip"
     models_dir = "models/" + model_name
     model_path = f"{models_dir}/{model_id}"
@@ -203,6 +202,19 @@ def load_model(venv) -> SelfBaseAlgorithm:
 
 
 def initialize_agent(env: Env | VecEnv, seed: int | None, tensorboard_log: str | None, env_id: str):
+    """
+    Initialize a PPO agent with the given environment, seed, and tensorboard log. It also automatically sets the device
+    to the GPU if available.
+
+    Args:
+        env: the environment to train the agent on
+        seed: the seed for the agent
+        tensorboard_log: the directory to store the tensorboard logs
+        env_id: the environment id
+
+    Returns: the (untrained) PPO agent
+    """
+
     return PPO(
         policy=MlpPolicy,
         env=env,
@@ -216,4 +228,5 @@ def initialize_agent(env: Env | VecEnv, seed: int | None, tensorboard_log: str |
         n_epochs=CONFIG.ppo[env_id].n_epochs,
         learning_rate=CONFIG.ppo[env_id].learning_rate,
         tensorboard_log=tensorboard_log,
+        device=th.device("cuda" if th.cuda.is_available() else "cpu"),
     )
