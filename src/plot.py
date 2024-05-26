@@ -9,7 +9,7 @@ def plot_agent_rewards(results_folder, environment, agents, query_types):
     data = {}
 
     for agent in agents:
-        if agent == "perfect":
+        if agent == "perfect_agent":
             rewards = []
 
             for run in range(3):
@@ -32,7 +32,7 @@ def plot_agent_rewards(results_folder, environment, agents, query_types):
                 data[agent][query_type] = sum(rewards) / len(rewards)
 
     for agent, query_data in data.items():
-        if agent == "perfect":
+        if agent == "perfect_agent":
             label = f"{agent}"
             query_data.plot(label=label)
         else:
@@ -86,7 +86,7 @@ def check_and_create_merged_file(directory, column_name, output_file_name):
 if __name__ == "__main__":
     # query_types = ["random", "active"]
     query_types = ["random"]
-    agents = ["learner_0", "learner_25", "learner_40", "learner_50", "learner_75", "learner_100"]
+    agents = ["perfect_agent", "learner_0", "learner_25", "learner_40", "learner_50", "learner_75", "learner_100"]
 
     for environment in CONFIG.ENVIRONMENTS:
         # We make sure the csv exists, else we create it
