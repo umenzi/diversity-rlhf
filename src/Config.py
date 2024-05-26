@@ -2,6 +2,7 @@ from dataclasses import dataclass, field, asdict
 from typing import Union, Dict
 
 import torch as th
+from stable_baselines3.ppo import MlpPolicy, CnnPolicy
 
 
 @dataclass
@@ -44,12 +45,13 @@ class PPOConfig:
 @dataclass
 class LunarPPOConfig(PPOConfig):
     # specific parameters for the Lunar Lander environment
-    pass
+    policy = MlpPolicy
 
 
 @dataclass
 class SpacePPOConfig(PPOConfig):
     # specific parameters for the Space Invaders environment
+    policy = CnnPolicy
     batch_size = 256
     clip_range = 0.3
     ent_coef = 0.093
@@ -63,6 +65,7 @@ class SpacePPOConfig(PPOConfig):
 @dataclass
 class AntPPOConfig(PPOConfig):
     # specific parameters for the Ant Environment
+    policy = MlpPolicy
     batch_size = 256
     clip_range = 0.2
     ent_coef = 0.038
