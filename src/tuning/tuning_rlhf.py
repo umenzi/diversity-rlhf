@@ -10,6 +10,7 @@ from src.train_preference_comparisons import get_preference_comparisons
 
 n_epochs = 3
 
+
 def objective(trial: optuna.Trial):
     reward_net, agent_trainer, main_trainer = (
         get_preference_comparisons(venv, env_id, None, num_iterations=1, seed=0,
