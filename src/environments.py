@@ -10,6 +10,15 @@ from Config import CONFIG
 
 
 def get_atari_env(n_envs: int = 1, seed: int = 1):
+    """
+    Get the Space Invaders environment, setting the episodes to a fixed length of 3500 steps.
+    Args:
+        n_envs: how many environments to run in parallel
+        seed: seed for the environment
+
+    Returns: the Space Invaders environment
+    """
+
     # Here we ensure that our environment has constant-length episodes by resetting
     # it when done, and running until num_steps have elapsed.
     # For real training, you will want a very high time limit (much more than 100).
@@ -36,6 +45,15 @@ def get_atari_env(n_envs: int = 1, seed: int = 1):
 
 
 def get_lunar_lander_env(n_envs: int = 1, seed: int = 1):
+    """
+    Get the Lunar Lander environment, setting the episodes to a fixed length of 3500 steps.
+    Args:
+        n_envs: how many environments to run in parallel
+        seed: seed for the environment
+
+    Returns: the Lunar Lander environment
+    """
+
     # Here we ensure that our environment has constant-length episodes by resetting
     # it when done, and running until 1000 time steps have elapsed.
     # For real training, you will want a very high time limit (much more than 100).
@@ -59,6 +77,16 @@ def get_lunar_lander_env(n_envs: int = 1, seed: int = 1):
 
 
 def get_ant_env(n_envs: int = 1, seed: int = 1):
+    """
+    Get the Ant environment, using the seals package.
+
+    Args:
+        n_envs: how many environments to run in parallel
+        seed: seed for the environment
+
+    Returns: the Ant environment
+    """
+
     return make_vec_env(
         "seals/Ant-v1",
         seed=seed,
@@ -67,9 +95,21 @@ def get_ant_env(n_envs: int = 1, seed: int = 1):
 
 
 def get_environment(id: str, n_envs: int = 1, seed: int = 1):
+    """
+    Get the environment based on the id
+
+    Args:
+        id: of the environment
+        n_envs: how many environments to run in parallel
+        seed: seed for the environment
+
+    Returns: the environment
+    Raises: Exception if the environment could not be identified
+    """
+
     if id == CONFIG.ENVIRONMENTS[0]:  # lunar lander
         return get_lunar_lander_env(n_envs, seed)
-    elif id == CONFIG.ENVIRONMENTS[1]:  # space invaders
+    elif id == "SpaceInvaders-v4":  # space invaders
         return get_atari_env(n_envs, seed)
     elif id == CONFIG.ENVIRONMENTS[2]:  # ants
         return get_ant_env(n_envs, seed)
