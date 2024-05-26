@@ -2,6 +2,8 @@ import os
 
 import pandas as pd
 import matplotlib.pyplot as plt
+from pandas import Series
+
 from Config import CONFIG
 
 
@@ -32,6 +34,7 @@ def plot_agent_rewards(results_folder, environment, agents, query_types):
                 data[agent][query_type] = sum(rewards) / len(rewards)
 
     for agent, query_data in data.items():
+        query_data: Series  # This avoids PyCharm warning
         if agent == "perfect_agent":
             label = f"{agent}"
             query_data.plot(label=label)
@@ -67,7 +70,7 @@ def merge_csv_files(directory, column_name, output_file_name):
         merged_df = merged_df.merge(df, on=column_name)
 
     # Save the merged DataFrame to a new CSV file in the same directory
-    merged_df.to_csv(os.path.join(directory, output_file_name), index=False)
+    merged_df.to_csv(path_or_buf=str(os.path.join(directory, output_file_name)), index=False)
 
     return merged_df
 
@@ -84,8 +87,7 @@ def check_and_create_merged_file(directory, column_name, output_file_name):
 
 
 if __name__ == "__main__":
-    # query_types = ["random", "active"]
-    query_types = ["random"]
+    query_types = ["random", "active"]
     agents = ["perfect_agent", "learner_0", "learner_25", "learner_40", "learner_50", "learner_75", "learner_100"]
 
     for environment in CONFIG.ENVIRONMENTS:
