@@ -456,7 +456,7 @@ def get_preference_comparisons(env: VecEnv, env_id: str, agent, num_iterations: 
     # A preference model is a model that converts two fragments' rewards into preference probability.
     preference_model = preference_comparisons.PreferenceModel(
         model=reward_net,
-    )
+    ).to(device)
 
     if active_selection:
         fragmenter = preference_comparisons.ActiveSelectionFragmenter(
