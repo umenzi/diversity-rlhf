@@ -20,6 +20,6 @@ Relevant files:
   - We also implement a custom `ConflictingSyntheticGatherer` class, which is used to generate conflicting preferences.
    There are also tests in the `tests` folder.
 - `train.py` includes the training loop for the agents.
-- `plot.py` plots the results of the training, stored in the `results` folder.
+- `plot_results.py` plots the results of the training, stored in the `results` folder.
 - `Config.py` includes the configuration for the training process. Hyperparameters, etc.
 - `helpers.py`, `environments.py`, and `graphs.py` includes many auxiliary functions to help with the training and evaluation process.
