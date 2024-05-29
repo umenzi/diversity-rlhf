@@ -3,10 +3,9 @@ import sys
 
 import wandb
 from imitation.rewards.reward_nets import (
-    BasicRewardNet,
+    ShapedRewardNet, cnn_transpose,
 )
 from imitation.rewards.reward_wrapper import RewardVecEnvWrapper
-from stable_baselines3 import PPO
 from stable_baselines3.common.base_class import SelfBaseAlgorithm
 from stable_baselines3.common.evaluation import evaluate_policy
 from wandb.integration.sb3 import WandbCallback
@@ -74,11 +73,28 @@ def train_rlhf(env, env_id, agent, seed, tensorboard_log, query_strategy, confli
                                         exploration_frac=CONFIG.rlhf[env_id].exploration_frac,
                                         conflicting_prob=conflicting_prob,
                                         active_selection=query_strategy == "active",
+                                        ensemble=query_strategy == "active",
                                         active_selection_oversampling=CONFIG.active_selection_oversampling,
-                                        reward_type=BasicRewardNet,
                                         temperature=CONFIG.rlhf[env_id].temperature,
                                         discount_factor=CONFIG.rlhf[env_id].discount_factor,
                                         tensorboard_log=tensorboard_log)
+
+
+def get_reward(env, reward_net, env_id, agent):
+    if env_id == 'SpaceInvaders-v4':
+        def value_potential(state):
+            state_ = cnn_transpose(state)
+            return agent.policy.predict_values(state_)
+
+        shaped_reward_net = ShapedRewardNet(
+            base=reward_net,
+            potential=value_potential,
+            discount_factor=0.99,
+        )
+
+        return RewardVecEnvWrapper(venv, shaped_reward_net.predict_processed)
+    else:
+        return RewardVecEnvWrapper(env, reward_net)
 
 
 # Run the experiments#
@@ -120,8 +136,9 @@ for query_strategy in CONFIG.QUERY_STRATEGIES:
 
             run.finish()
 
-            (reward_net_0, main_trainer_0, results_0) = train_rlhf(venv, env_id, None, seed, tensorboard_log,
-                                                                   query_strategy, conflicting_prob=0.0)
+            (reward_net_0, main_trainer_0, agent_trainer_0, results_0) = train_rlhf(venv, env_id, None, seed,
+                                                                                    tensorboard_log, query_strategy,
+                                                                                    conflicting_prob=0.0)
 
             run = wandb.init(
                 project=env_id,
@@ -133,14 +150,15 @@ for query_strategy in CONFIG.QUERY_STRATEGIES:
             )
 
             # We train an agent that sees only the shaped, learned reward
-            learned_reward_venv_0 = RewardVecEnvWrapper(venv, reward_net_0.predict_processed)
+            learned_reward_venv_0 = get_reward(venv, reward_net_0.predict_processed, env_id, agent_trainer_0)
             learner_0 = initialize_agent(learned_reward_venv_0, seed, tensorboard_log, env_id)
             train_agent(learner_0, "learner_0", i)
 
             run.finish()
 
-            (reward_net_25, main_trainer_25, results_25) = train_rlhf(venv, env_id, None, seed, tensorboard_log,
-                                                                      query_strategy, conflicting_prob=0.25)
+            (reward_net_25, main_trainer_25, agent_trainer_25, results_25) = train_rlhf(venv, env_id, None, seed,
+                                                                                        tensorboard_log, query_strategy,
+                                                                                        conflicting_prob=0.25)
 
             run = wandb.init(
                 project=env_id,
@@ -152,14 +170,15 @@ for query_strategy in CONFIG.QUERY_STRATEGIES:
             )
 
             # We train an agent that sees only the shaped, learned reward
-            learned_reward_venv_25 = RewardVecEnvWrapper(venv, reward_net_25.predict_processed)
+            learned_reward_venv_25 = get_reward(venv, reward_net_25.predict_processed, env_id, agent_trainer_25)
             learner_25 = initialize_agent(learned_reward_venv_25, seed, tensorboard_log, env_id)
             train_agent(learner_25, "learner_25", i)
 
             run.finish()
 
-            (reward_net_40, main_trainer_40, results_40) = train_rlhf(venv, env_id, None, seed, tensorboard_log,
-                                                                      query_strategy, conflicting_prob=0.40)
+            (reward_net_40, main_trainer_40, agent_trainer_40, results_40) = train_rlhf(venv, env_id, None, seed,
+                                                                                        tensorboard_log, query_strategy,
+                                                                                        conflicting_prob=0.40)
 
             run = wandb.init(
                 project=env_id,
@@ -171,14 +190,15 @@ for query_strategy in CONFIG.QUERY_STRATEGIES:
             )
 
             # We train an agent that sees only the shaped, learned reward
-            learned_reward_venv_40 = RewardVecEnvWrapper(venv, reward_net_40.predict_processed)
+            learned_reward_venv_40 = get_reward(venv, reward_net_40.predict_processed, env_id, agent_trainer_40)
             learner_40 = initialize_agent(learned_reward_venv_40, seed, tensorboard_log, env_id)
             train_agent(learner_40, "learner_40", i)
 
             run.finish()
 
-            (reward_net_50, main_trainer_50, results_50) = train_rlhf(venv, env_id, None, seed, tensorboard_log,
-                                                                      query_strategy, conflicting_prob=0.50)
+            (reward_net_50, main_trainer_50, agent_trainer_50, results_50) = train_rlhf(venv, env_id, None, seed,
+                                                                                        tensorboard_log, query_strategy,
+                                                                                        conflicting_prob=0.50)
 
             run = wandb.init(
                 project=env_id,
@@ -190,14 +210,15 @@ for query_strategy in CONFIG.QUERY_STRATEGIES:
             )
 
             # We train an agent that sees only the shaped, learned reward
-            learned_reward_venv_50 = RewardVecEnvWrapper(venv, reward_net_50.predict_processed)
+            learned_reward_venv_50 = get_reward(venv, reward_net_50.predict_processed, env_id, agent_trainer_50)
             learner_50 = initialize_agent(learned_reward_venv_50, seed, tensorboard_log, env_id)
             train_agent(learner_50, "learner_50", i)
 
             run.finish()
 
-            (reward_net_75, main_trainer_75, results_75) = train_rlhf(venv, env_id, None, seed, tensorboard_log,
-                                                                      query_strategy, conflicting_prob=0.75)
+            (reward_net_75, main_trainer_75, agent_trainer_75, results_75) = train_rlhf(venv, env_id, None, seed,
+                                                                                        tensorboard_log, query_strategy,
+                                                                                        conflicting_prob=0.75)
 
             run = wandb.init(
                 project=env_id,
@@ -209,14 +230,16 @@ for query_strategy in CONFIG.QUERY_STRATEGIES:
             )
 
             # We train an agent that sees only the shaped, learned reward
-            learned_reward_venv_75 = RewardVecEnvWrapper(venv, reward_net_75.predict_processed)
+            learned_reward_venv_75 = get_reward(venv, reward_net_75.predict_processed, env_id, agent_trainer_75)
             learner_75 = initialize_agent(learned_reward_venv_75, seed, tensorboard_log, env_id)
             train_agent(learner_75, "learner_75", i)
 
             run.finish()
 
-            (reward_net_100, main_trainer_100, results_100) = train_rlhf(venv, env_id, None, seed, tensorboard_log,
-                                                                         query_strategy, conflicting_prob=1.0)
+            (reward_net_100, main_trainer_100, agent_trainer_100, results_100) = train_rlhf(venv, env_id, None,
+                                                                                            seed, tensorboard_log,
+                                                                                            query_strategy,
+                                                                                            conflicting_prob=1.0)
 
             run = wandb.init(
                 project=env_id,
@@ -228,44 +251,10 @@ for query_strategy in CONFIG.QUERY_STRATEGIES:
             )
 
             # We train an agent that sees only the shaped, learned reward
-            learned_reward_venv_100 = RewardVecEnvWrapper(venv, reward_net_100.predict_processed)
+            learned_reward_venv_100 = get_reward(venv, reward_net_100.predict_processed, env_id, agent_trainer_100)
             learner_100 = initialize_agent(learned_reward_venv_100, seed, tensorboard_log, env_id)
             train_agent(learner_100, "learner_100", i)
 
             run.finish()
             venv.close()
             eval_venv.close()
-
-# helpers.evaluate(learner_0, num_episodes=10, deterministic=True, render=False, env_name="lunar")
-
-# Evaluation #
-
-# List of learners
-# learners = [learner_0, learner_25, learner_50, learner_75, learner_100]
-
-# List of learner names
-# learner_names = ['learner_0', 'learner_25', 'learner_50', 'learner_75', 'learner_100']
-
-# Dictionary to hold results
-# results = {}
-
-# Evaluate each policy and store the results
-# for learner, name in zip(learners, learner_names):
-#     reward, _ = evaluate_policy(learner.policy, venv, n_eval_episodes=100, return_episode_rewards=True)
-#     results[name] = (np.mean(reward), np.std(reward))  # mean and std reward per episode
-
-# Convert the results to a DataFrame
-# df = pd.DataFrame(results, index=['Mean Reward', 'Std Reward'])
-
-# Print the DataFrame
-# logging.info(df)
-
-# Compare each learner with all other learners
-# for name1, reward1 in results.items():
-#     for name2, reward2 in results.items():
-#         if name1 != name2:
-#             significant = is_significant_reward_improvement(reward1, reward2, 0.001)
-#             logging.info(f"{name1} is {'significantly better' if significant else 'NOT significantly better'} than {name2}.")
-
-
-# src.graphs.visualize_training(CONFIG.logdir, [environment_dir], False)
