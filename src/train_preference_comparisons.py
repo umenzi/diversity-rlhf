@@ -200,7 +200,7 @@ def train_preference_comparisons(
         ensemble: bool = False,
         seed: int | None = None,
         tensorboard_log: str | None = None,
-) -> tuple[BasicRewardNet, PreferenceComparisons, dict[str, Mapping[str, float] | Any] | Mapping[str, Any]]:
+) -> tuple[BasicRewardNet, PreferenceComparisons, preference_comparisons.AgentTrainer, dict[str, Mapping[str, float] | Any] | Mapping[str, Any]]:
     """Train a reward model using preference comparisons.
 
     Args:
@@ -280,18 +280,30 @@ def train_preference_comparisons(
     """
 
     logs_dir = "logs/"
-    reward_net, agent_trainer, main_trainer = get_preference_comparisons(env, env_id, agent, num_iterations,
-                                                                         comparison_queue_size, trajectory_path,
-                                                                         reward_trainer_epochs, fragment_length,
-                                                                         transition_oversampling,
-                                                                         initial_comparison_frac,
-                                                                         initial_epoch_multiplier, exploration_frac,
-                                                                         active_selection,
-                                                                         active_selection_oversampling, uncertainty_on,
-                                                                         allow_variable_horizon, query_schedule,
-                                                                         n_episodes_eval, reward_type, conflicting_prob,
-                                                                         temperature, discount_factor, ensemble,
-                                                                         seed, tensorboard_log)
+    reward_net, agent_trainer, main_trainer = (
+        get_preference_comparisons(env=env, env_id=env_id, agent=agent,
+                                   num_iterations=num_iterations,
+                                   comparison_queue_size=comparison_queue_size,
+                                   trajectory_path=trajectory_path,
+                                   reward_trainer_epochs=reward_trainer_epochs,
+                                   fragment_length=fragment_length,
+                                   transition_oversampling=transition_oversampling,
+                                   initial_comparison_frac=initial_comparison_frac,
+                                   initial_epoch_multiplier=initial_epoch_multiplier,
+                                   exploration_frac=exploration_frac,
+                                   active_selection=active_selection,
+                                   active_selection_oversampling=active_selection_oversampling,
+                                   uncertainty_on=uncertainty_on,
+                                   allow_variable_horizon=allow_variable_horizon,
+                                   query_schedule=query_schedule,
+                                   n_episodes_eval=n_episodes_eval,
+                                   reward_type=reward_type,
+                                   conflicting_prob=conflicting_prob,
+                                   temperature=temperature,
+                                   discount_factor=discount_factor,
+                                   ensemble=ensemble,
+                                   seed=seed,
+                                   tensorboard_log=tensorboard_log))
 
     def save_callback(iteration_num):
         if checkpoint_interval > 0 and iteration_num % checkpoint_interval == 0:
@@ -326,7 +338,7 @@ def train_preference_comparisons(
             allow_save_policy=bool(trajectory_path is None),
         )
 
-    return reward_net, main_trainer, results
+    return reward_net, main_trainer, agent_trainer, results
 
 
 @train_preference_comparisons_ex.main
@@ -341,8 +353,8 @@ def get_preference_comparisons(env: VecEnv, env_id: str, agent, num_iterations: 
                                query_schedule: Union[str, type_aliases.Schedule] = "hyperbolic",
                                n_episodes_eval: int = 10, reward_type=None,
                                conflicting_prob: float = 0, temperature: float = 1, discount_factor: float = 1,
-                               ensemble: bool = False, seed: int | None = None, tensorboard_log: str | None = None) -> Tuple[
-    BasicRewardNet, preference_comparisons.AgentTrainer, PreferenceComparisons]:
+                               ensemble: bool = False, seed: int | None = None, tensorboard_log: str | None = None) -> \
+        Tuple[BasicRewardNet, preference_comparisons.AgentTrainer, PreferenceComparisons]:
     """Creates an untrained reward model using preference comparisons.
 
     Args:
