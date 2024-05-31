@@ -78,7 +78,7 @@ class AntPPOConfig(PPOConfig):
 
 @dataclass
 class RLHFConfig:
-    total_timesteps = 150_000
+    total_timesteps = 200_000
     total_comparisons = 500
     num_iterations = 60
 
@@ -117,9 +117,14 @@ class SpaceRLHFConfig(RLHFConfig):
 
 @dataclass
 class AntRLHFConfig(RLHFConfig):
+    total_timesteps = 2_000_000
+    total_comparisons = 1_000
+    num_iterations = 100
+    initial_epoch_multiplier = 6
+
     # specific parameters for the Ant Environment
-    fragment_length = 89
-    transition_oversampling = 1.13
+    fragment_length = 1_000
+    transition_oversampling = 1.5
     initial_comparison_frac = 0.68
     exploration_frac = 0.25
     temperature = 0.84
@@ -128,8 +133,7 @@ class AntRLHFConfig(RLHFConfig):
 
 @dataclass
 class Config:
-    # ENVIRONMENTS = ["LunarLander-v2", "SpaceInvaders-v4", 'Ant-v1']
-    ENVIRONMENTS = ["LunarLander-v2"]
+    ENVIRONMENTS = ["LunarLander-v2", "SpaceInvaders-v4", 'Ant-v1']
     QUERY_STRATEGIES = ["random", "active"]
 
     env: EnvConfig = field(default_factory=EnvConfig)
