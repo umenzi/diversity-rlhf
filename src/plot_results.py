@@ -107,7 +107,7 @@ def compare_agent_performance(agent_rewards, query_types):
         for agent1, agent2 in combinations(agent_rewards.keys(), 2):
             # Perform a permutation test to compare the performance of the two agents
             permutation_test_result = stats.permutation_test(
-                (agent_rewards[agent1][query_type], agent_rewards[agent2][query_type]),
+                (agent_rewards[agent2][query_type], agent_rewards[agent1][query_type]),
                 statistic=lambda x, y, axis: np.mean(x, axis=axis) - np.mean(y, axis=axis),
                 vectorized=True,
                 alternative="less",
@@ -124,23 +124,7 @@ def compare_agent_performance(agent_rewards, query_types):
         print(results)
 
 
-if __name__ == "__main__":
-    # First, we create the csv file if it does not exist
-    if not os.path.exists(os.path.join("results", "LunarLander-v2.csv")):
-        check_and_create_merged_file("results", "Step", "LunarLander-v2.csv")
-
-    # Next, we plot the average rewards for each agent
-    query_types = ["random", "active"]
-    agents = ["learner_0", "learner_25", "learner_40", "learner_50", "learner_75", "learner_100"]
-    #
-    for environment in CONFIG.ENVIRONMENTS:
-        # We make sure the csv exists, else we create it
-        check_and_create_merged_file("results", "Step", f"{environment}.csv")
-
-        # We plot the resulting csv file
-        plot_agent_rewards("results", environment, agents, query_types)
-
-    # Finally, we compare the performance of the agents
+def analyse_performance(agents, query_types):
     df = pd.read_csv("results/LunarLander-v2.csv")
     agent_rewards = {}
 
@@ -157,5 +141,28 @@ if __name__ == "__main__":
             average_rewards = [(x + y + z) / 3 for x, y, z in zip(rewards[0], rewards[1], rewards[2])]
 
             agent_rewards[agent][query_type] = average_rewards
-
     compare_agent_performance(agent_rewards, query_types)
+
+
+def plot_average_rewards(agents, query_types):
+    for environment in CONFIG.ENVIRONMENTS:
+        # We make sure the csv exists, else we create it
+        check_and_create_merged_file("results", "Step", f"{environment}.csv")
+
+        # We plot the resulting csv file
+        plot_agent_rewards("results", environment, agents, query_types)
+
+
+if __name__ == "__main__":
+    # First, we create the csv file if it does not exist
+    if not os.path.exists(os.path.join("results", "LunarLander-v2.csv")):
+        check_and_create_merged_file("results", "Step", "LunarLander-v2.csv")
+
+    queries = ["random", "active"]
+    agents_list = ["perfect_agent", "learner_0", "learner_25", "learner_40", "learner_50", "learner_75", "learner_100"]
+
+    # Next, we plot the average rewards for each agent
+    plot_average_rewards(agents_list, queries)
+
+    # Finally, we compare the performance of the agents
+    analyse_performance(agents_list, queries)
