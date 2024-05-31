@@ -258,7 +258,6 @@ def train_preference_comparisons(
             be allocated to each iteration. "Hyperbolic" and "inverse_quadratic"
             apportion fewer queries to later iterations when the policy is assumed
             to be better and more stable.
-        rng: the random number generator (if None, a random one will be created)
         n_episodes_eval: The number of episodes to average over when calculating
             the average episode reward of the imitation policy for return. Only relevant
             if trajectory_path is not None.
@@ -269,7 +268,7 @@ def train_preference_comparisons(
         temperature: the preferences are sampled from a softmax, this is the temperature used for sampling.
         discount_factor: discount factor that is used to compute how good a fragment is.
         ensemble: whether to use an ensemble of reward models
-        seed: random seed
+        seed: random seed. If None, an unpredictable seed will be chosen.
         tensorboard_log: the directory to save the tensorboard logs
 
     Returns:
@@ -415,7 +414,7 @@ def get_preference_comparisons(env: VecEnv, env_id: str, agent, num_iterations: 
         temperature: the preferences are sampled from a softmax, this is the temperature used for sampling.
         discount_factor: discount factor that is used to compute how good a fragment is.
         ensemble: whether to use an ensemble of reward models
-        seed: random seed
+        seed: random seed. If None, an unpredictable seed will be chosen.
         tensorboard_log: the directory to save the tensorboard logs
 
     Returns:
