@@ -460,9 +460,19 @@ def get_preference_comparisons(env: VecEnv, env_id: str, agent, num_iterations: 
                 env.observation_space, env.action_space
             ).to(device)
     else:
-        reward_net = reward_type(
-            env.observation_space, env.action_space
-        ).to(device)
+        if ensemble:
+            reward_net = RewardEnsemble(
+                env.observation_space,
+                env.action_space,
+                members=[
+                    reward_type(env.observation_space, env.action_space)
+                    for _ in range(3)  # we use 3 reward ensembles
+                ]
+            ).to(device)
+        else:
+            reward_net = reward_type(
+                env.observation_space, env.action_space
+            ).to(device)
 
     # A preference model is a model that converts two fragments' rewards into preference probability.
     preference_model = preference_comparisons.PreferenceModel(
