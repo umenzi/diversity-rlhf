@@ -192,7 +192,6 @@ def train_preference_comparisons(
         allow_variable_horizon: bool = False,
         checkpoint_interval: int = 0,
         query_schedule: Union[str, type_aliases.Schedule] = "hyperbolic",
-        n_episodes_eval: int = 10,
         reward_type=None,
         conflicting_prob: float = 0,
         temperature: float = 1,
@@ -258,9 +257,6 @@ def train_preference_comparisons(
             be allocated to each iteration. "Hyperbolic" and "inverse_quadratic"
             apportion fewer queries to later iterations when the policy is assumed
             to be better and more stable.
-        n_episodes_eval: The number of episodes to average over when calculating
-            the average episode reward of the imitation policy for return. Only relevant
-            if trajectory_path is not None.
         reward_type: The type of reward model to use (e.g. CnnRewardNet). If None, a BasicRewardNet
         conflicting_prob: probability of conflicting preferences.
                 Conflicting means that the preferences are flipped. If 0, no conflicts (i.e. this would
@@ -295,7 +291,6 @@ def train_preference_comparisons(
                                    uncertainty_on=uncertainty_on,
                                    allow_variable_horizon=allow_variable_horizon,
                                    query_schedule=query_schedule,
-                                   n_episodes_eval=n_episodes_eval,
                                    reward_type=reward_type,
                                    conflicting_prob=conflicting_prob,
                                    temperature=temperature,
@@ -318,13 +313,6 @@ def train_preference_comparisons(
         total_comparisons,
         callback=save_callback,
     )
-
-    # Storing and evaluating policy only useful if we generated trajectory data
-    # This part of the code seems to not work
-    #
-    # if bool(trajectory_path is None):
-    #     results = dict(results)
-    #     results["imit_stats"] = policy_evaluation.eval_policy(agent, n_episodes_eval, env)
 
     if save_preferences:
         main_trainer.dataset.save(pathlib.Path(logs_dir + "preferences.pkl"))
@@ -350,9 +338,9 @@ def get_preference_comparisons(env: VecEnv, env_id: str, agent, num_iterations: 
                                active_selection_oversampling: int = 2, uncertainty_on: str = "logit",
                                allow_variable_horizon: bool = False,
                                query_schedule: Union[str, type_aliases.Schedule] = "hyperbolic",
-                               n_episodes_eval: int = 10, reward_type=None,
-                               conflicting_prob: float = 0, temperature: float = 1, discount_factor: float = 1,
-                               ensemble: bool = False, seed: int | None = None, tensorboard_log: str | None = None) -> \
+                               reward_type=None, conflicting_prob: float = 0, temperature: float = 1,
+                               discount_factor: float = 1, ensemble: bool = False,
+                               seed: int | None = None, tensorboard_log: str | None = None) -> \
         Tuple[BasicRewardNet, preference_comparisons.AgentTrainer, PreferenceComparisons]:
     """Creates an untrained reward model using preference comparisons.
 
@@ -404,9 +392,6 @@ def get_preference_comparisons(env: VecEnv, env_id: str, agent, num_iterations: 
             be allocated to each iteration. "Hyperbolic" and "inverse_quadratic"
             apportion fewer queries to later iterations when the policy is assumed
             to be better and more stable.
-        n_episodes_eval: The number of episodes to average over when calculating
-            the average episode reward of the imitation policy for return. Only relevant
-            if trajectory_path is not None.
         reward_type: The type of reward model to use (e.g. CnnRewardNet). If None, a BasicRewardNet
         conflicting_prob: probability of conflicting preferences.
                 Conflicting means that the preferences are flipped. If 0, no conflicts (i.e. this would

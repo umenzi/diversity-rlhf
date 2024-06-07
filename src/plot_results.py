@@ -1,14 +1,12 @@
 import os
 import re
+from itertools import combinations
 from typing import List, Optional
 
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 from matplotlib import pyplot as plt
 from pandas import Series
-from itertools import combinations
-
 from scipy import stats
 from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
 

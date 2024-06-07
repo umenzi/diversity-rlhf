@@ -2,7 +2,7 @@ from dataclasses import dataclass, field, asdict
 from typing import Union, Dict
 
 import torch as th
-from stable_baselines3.ppo import MlpPolicy, CnnPolicy
+from stable_baselines3.ppo import MlpPolicy
 
 
 @dataclass

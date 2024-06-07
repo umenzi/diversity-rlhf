@@ -79,7 +79,7 @@ def train_rlhf(env, env_id, agent, seed, tensorboard_log, query_strategy, confli
 
 
 # Run the experiments
-for query_strategy in ["random"]:
+for query_strategy in CONFIG.QUERY_STRATEGIES:
     for env_id in ["Pendulum-v1"]:
         for i in range(CONFIG.num_experiments):
             # We change the random seed in every experiment
