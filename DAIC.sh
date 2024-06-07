@@ -23,7 +23,7 @@ module load cuda/12.4 cudnn/12-8.9.1.23 # Load certain versions of cuda and cudn
 which python3 1>&2  # Write path to Python binary to standard error
 python3 --version   # Write Python version to standard error
 
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 
 # Run your script with the `srun` command:
 srun python3 src/train.py
