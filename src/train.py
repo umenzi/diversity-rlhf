@@ -1,10 +1,12 @@
 import logging
 import sys
 
+import torch.cuda
 import wandb
 from imitation.rewards.reward_wrapper import RewardVecEnvWrapper
 from stable_baselines3.common.base_class import SelfBaseAlgorithm
 from stable_baselines3.common.evaluation import evaluate_policy
+from stable_baselines3.common.utils import set_random_seed
 from wandb.integration.sb3 import WandbCallback
 
 import Constants
@@ -77,9 +79,9 @@ def train_rlhf(env, env_id, agent, seed, tensorboard_log, query_strategy, confli
 
 
 # Run the experiments
-for query_strategy in CONFIG.QUERY_STRATEGIES:
-    for env_id in CONFIG.ENVIRONMENTS:
-        for i in range(CONFIG.num_experiments):
+for query_strategy in ["random"]:
+    for env_id in ["BipedalWalker-v3"]:
+        for i in range(1, CONFIG.num_experiments):
             # We change the random seed in every experiment
             seed = i * 10
 
@@ -91,6 +93,8 @@ for query_strategy in CONFIG.QUERY_STRATEGIES:
             # We set up the environment directory and the log directory
             environment_dir = f"{env_id}/"
             tensorboard_log = environment_dir + CONFIG.logdir
+
+            set_random_seed(seed, torch.cuda.is_available())
 
             # Hyperparameters to log in wandb
             wandb_config = {
