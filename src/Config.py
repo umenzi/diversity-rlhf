@@ -2,6 +2,8 @@ from dataclasses import dataclass, field, asdict
 from typing import Union, Dict
 
 import torch as th
+from imitation.policies.base import FeedForward32Policy, NormalizeFeaturesExtractor
+from imitation.util.networks import RunningNorm
 from stable_baselines3.ppo import MlpPolicy
 
 
@@ -24,6 +26,7 @@ class PPOConfig:
     env_steps: int = 10_000  # we evaluate PPO after this many steps
     iterations: int = 100
 
+    policy_kwargs = dict(),
     batch_size = 64
     clip_range = 0.1
     ent_coef = 0.0
@@ -40,7 +43,12 @@ class PPOConfig:
 class PendulumPPOConfig(PPOConfig):
     # specific parameters for the Pendulum environment
     # https://huggingface.co/sb3/ppo-Pendulum-v1
-    policy = MlpPolicy
+    policy = FeedForward32Policy
+    policy_kwargs = dict(
+        features_extractor_class=NormalizeFeaturesExtractor,
+        features_extractor_kwargs=dict(normalize_class=RunningNorm),
+    ),
+
     env_steps = 1_000
     clip_range = 0.2
     ent_coef = 0.01
@@ -98,9 +106,10 @@ class RLHFConfig:
 @dataclass
 class PendulumRLHFConfig(RLHFConfig):
     # specific parameters for the Pendulum environment
-    transition_oversampling = 1.3
-    initial_comparison_frac = 0.2
-    exploration_frac = 0.06
+    reward_trainer_epochs = 3
+    transition_oversampling = 1
+    initial_comparison_frac = 0.1
+    exploration_frac = 0.05
     temperature = 0.22
     discount_factor = 1
 

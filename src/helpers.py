@@ -214,6 +214,7 @@ def initialize_agent(env: Env | VecEnv, seed: int | None, tensorboard_log: str |
 
     return PPO(
         policy=CONFIG.ppo[env_id].policy,
+        policy_kwargs=CONFIG.ppo[env_id].policy_kwargs,
         env=env,
         seed=seed,
         n_steps=CONFIG.ppo[env_id].n_steps,
