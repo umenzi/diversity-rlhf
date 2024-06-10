@@ -35,8 +35,6 @@ class PPOConfig:
     gae_lambda = 0.99
     n_epochs = 10
     n_steps = 2048
-    use_sde = False
-    sde_sample_freq = -1
 
 
 @dataclass
@@ -57,8 +55,6 @@ class PendulumPPOConfig(PPOConfig):
     gamma = 0.91
     n_epochs = 10
     n_steps = 1024
-    use_sde = True
-    sde_sample_freq = 4
 
 
 @dataclass
