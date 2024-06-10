@@ -214,7 +214,7 @@ def initialize_agent(env: Env | VecEnv, seed: int | None, tensorboard_log: str |
 
     return PPO(
         policy=CONFIG.ppo[env_id].policy,
-        policy_kwargs=CONFIG.ppo[env_id].policy_kwargs,
+        policy_kwargs=CONFIG.ppo[env_id].policy_kwargs[0],  # Config returns a tuple(Dict, None), we want the dictionary
         env=env,
         seed=seed,
         n_steps=CONFIG.ppo[env_id].n_steps,
@@ -225,8 +225,6 @@ def initialize_agent(env: Env | VecEnv, seed: int | None, tensorboard_log: str |
         gae_lambda=CONFIG.ppo[env_id].gae_lambda,
         n_epochs=CONFIG.ppo[env_id].n_epochs,
         learning_rate=CONFIG.ppo[env_id].learning_rate,
-        use_sde=CONFIG.ppo[env_id].use_sde,
-        sde_sample_freq=CONFIG.ppo[env_id].sde_sample_freq,
         tensorboard_log=tensorboard_log,
         device=th.device("cuda" if th.cuda.is_available() else "cpu"),
     )
