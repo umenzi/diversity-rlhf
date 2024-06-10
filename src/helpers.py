@@ -11,10 +11,9 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.base_class import SelfBaseAlgorithm
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.vec_env import VecEnv
-from stable_baselines3.ppo import MlpPolicy
 
 from Config import CONFIG
-from src.environments import get_lunar_lander_env
+from environments import get_environment
 
 
 def print_reward_info(reward_1, reward_2, a_1: str, a_2: str, n_episodes: int):
@@ -48,10 +47,8 @@ def evaluate(model: SelfBaseAlgorithm, env_name, n_envs=1, num_episodes=10, verb
 
     # vec_env: VecEnv = model.get_env()
     is_atari = False
-    if env_name == "lunar":
-        vec_env = get_lunar_lander_env(n_envs)
-    else:
-        raise Exception("Invalid environment name")
+
+    vec_env = get_environment(env_name, n_envs)
 
     if render:
         episode_reward = 0.0
@@ -216,7 +213,8 @@ def initialize_agent(env: Env | VecEnv, seed: int | None, tensorboard_log: str |
     """
 
     return PPO(
-        policy=MlpPolicy,
+        policy=CONFIG.ppo[env_id].policy,
+        policy_kwargs=CONFIG.ppo[env_id].policy_kwargs[0],  # Config returns a tuple(Dict, None), we want the dictionary
         env=env,
         seed=seed,
         n_steps=CONFIG.ppo[env_id].n_steps,

@@ -1,13 +1,12 @@
 import numpy as np
+import optuna
 import pandas as pd
 import torch as th
-import optuna
 from stable_baselines3 import PPO
 from stable_baselines3.common.evaluation import evaluate_policy
-from stable_baselines3.ppo import MlpPolicy
-from Config import CONFIG
 
 import src.environments
+from Config import CONFIG
 
 rng = np.random.default_rng(0)
 n_epochs = 3
@@ -29,6 +28,8 @@ def objective(trial: optuna.Trial):
         clip_range=trial.suggest_float("clip_range", 0.1, 0.3, step=0.05),
         device=device,
     )
+
+    accuracy = None
 
     for epoch in range(n_epochs):  # Assuming you have 4 epochs as defined in n_epochs
         agent.learn(total_timesteps=15_000 // n_epochs)  # Divide total_timesteps by number of epochs
