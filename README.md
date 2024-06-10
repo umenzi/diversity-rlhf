@@ -35,3 +35,10 @@ Relevant files:
 - `plot_results.py` plots the results of the training, stored in the `results` folder.
 - `Config.py` includes the configuration for the training process. Hyperparameters, etc.
 - `helpers.py`, `environments.py`, and `graphs.py` includes many auxiliary functions to help with the training and evaluation process.
+
+Note that the code logs the results in Weight & Biases, so you need to have an account and set up the API key.
+This key should be stored in a `Constants.py` file in the root directory:
+
+```python
+API_WANDB_KEY = 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
+```
