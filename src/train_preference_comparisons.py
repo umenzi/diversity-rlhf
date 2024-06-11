@@ -123,7 +123,10 @@ class ConflictingSyntheticGatherer(PreferenceGatherer):
         """Computes probability fragment 1 is preferred over fragment 2."""
         returns1, returns2 = self._reward_sums(fragment_pairs)
         if self.temperature == 0:
-            return (1 - 2 * self.conflicting_prob) * (np.sign(returns1 - returns2) + 1) / 2 + self.conflicting_prob
+            if self.rng.random() < self.conflicting_prob:
+                return 1 - ((np.sign(returns1 - returns2) + 1) / 2)
+            else:
+                return (np.sign(returns1 - returns2) + 1) / 2
 
         returns1 /= self.temperature
         returns2 /= self.temperature
@@ -135,7 +138,8 @@ class ConflictingSyntheticGatherer(PreferenceGatherer):
         model_probs = 1 / (1 + np.exp(returns_diff))
 
         # Make model_probs conflicting with probability `conflicting_prob`
-        model_probs = (1 - 2 * self.conflicting_prob) * model_probs + self.conflicting_prob
+        if self.rng.random() < self.conflicting_prob:
+            model_probs = 1 - model_probs
 
         # Make model_probs conflicting with probability `conflicting_prob`
         # Compute the mean binary entropy.
