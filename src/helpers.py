@@ -45,7 +45,6 @@ def evaluate(model: SelfBaseAlgorithm, env_name, n_envs=1, num_episodes=10, verb
     :return: (float) Mean reward for the last num_episodes
     """
 
-    # vec_env: VecEnv = model.get_env()
     is_atari = False
 
     vec_env = get_environment(env_name, n_envs)
@@ -57,7 +56,6 @@ def evaluate(model: SelfBaseAlgorithm, env_name, n_envs=1, num_episodes=10, verb
         successes = []
         episode_start = np.ones((n_envs,), dtype=bool)
         obs = vec_env.reset()
-        done = np.array([False] * vec_env.num_envs)
 
         # This function will only work for a single Environment More info about vectorized environments:
         # https://stable-baselines3.readthedocs.io/en/master/guide/vec_envs.html
@@ -186,9 +184,6 @@ def load_model(venv, model_name="PPO") -> SelfBaseAlgorithm:
     models_dir = "models/" + model_name
     model_path = f"{models_dir}/{model_id}"
     logs_dir = "logs"
-    rewards_dir = "rewards/" + model_name
-    reward_id = model_id
-    rewards_path = f"{rewards_dir}/{reward_id}"
 
     if not os.path.exists(models_dir) or not os.path.exists(logs_dir):
         sys.exit("Please train a model (in train_model.py) before running run_model.py")

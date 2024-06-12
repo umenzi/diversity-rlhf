@@ -143,10 +143,10 @@ class Config:
     env: EnvConfig = field(default_factory=EnvConfig)
     ppo: Dict[str, Union[PendulumPPOConfig, LunarPPOConfig, WalkerPPOConfig]] = field(
         default_factory=lambda: {"Pendulum-v1": PendulumPPOConfig(), "LunarLander-v2": LunarPPOConfig(),
-                                 "BipedalWalker-v3": WalkerPPOConfig})
+                                 "BipedalWalker-v3": WalkerPPOConfig()})
     rlhf: Dict[str, Union[PendulumRLHFConfig, LunarRLHFConfig, WalkerRLHFConfig]] = field(
         default_factory=lambda: {"Pendulum-v1": PendulumRLHFConfig(), "LunarLander-v2": LunarRLHFConfig(),
-                                 "BipedalWalker-v3": WalkerRLHFConfig})
+                                 "BipedalWalker-v3": WalkerRLHFConfig()})
 
     device = th.device("cuda" if th.cuda.is_available() else "cpu")
 

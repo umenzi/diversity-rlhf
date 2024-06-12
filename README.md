@@ -28,7 +28,7 @@ given some conflicting probability. The agents can then be evaluated, plotting t
 and conduct permutation tests to compare the agents' performance.
 
 Relevant files:
-- `train_preference_comparisons.py` include the main methods to obtain the RLHF agents and train.
+- `train_preference_comparisons.py` include the main methods to get the RLHF agents and train them.
   - We also implement a custom `ConflictingSyntheticGatherer` class, which is used to generate conflicting preferences.
    There are also tests in the `tests` folder.
 - `train.py` includes the training loop for the agents.
@@ -36,9 +36,22 @@ Relevant files:
 - `Config.py` includes the configuration for the training process. Hyperparameters, etc.
 - `helpers.py`, `environments.py`, and `graphs.py` includes many auxiliary functions to help with the training and evaluation process.
 
+
+### Logging into wandb
+
 Note that the code logs the results in Weight & Biases, so you need to have an account and set up the API key.
 This key should be stored in a `Constants.py` file in the root directory:
 
 ```python
 API_WANDB_KEY = 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
 ```
+
+### Evaluating agents
+
+The agents' performance is evaluated using csv files of their mean evaluating reward per episode.
+These files are named after the environment and must be stored in the `results` folder.
+
+The `plot_results.py` script can be used to plot the results of the agents.
+The script will plot the average evaluating reward per episode and 
+conduct permutation tests to compare the agents' performance.
+It also includes helper methods to generate the csv files from wandb logs.

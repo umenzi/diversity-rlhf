@@ -34,7 +34,10 @@ def save_model(
         agent_trainer: preference_comparisons.AgentTrainer,
         save_path: pathlib.Path,
 ):
-    """Save the model as `model.zip`."""
+    """
+    Save the model as `model.zip`.
+    """
+
     policies_serialize.save_stable_model(
         output_dir=save_path / "policy",
         model=agent_trainer.algorithm,
@@ -46,9 +49,13 @@ def save_checkpoint(
         save_path: pathlib.Path,
         allow_save_policy: Optional[bool],
 ):
-    """Save reward model and optionally policy."""
+    """
+    Save reward model and optionally policy.
+    """
+
     save_path.mkdir(parents=True, exist_ok=True)
     th.save(trainer.model, save_path / "reward_net.pt")
+
     if allow_save_policy:
         # Note: We should only save the model as model.zip if `trajectory_generator`
         # contains one. Currently, we are slightly over-conservative by requiring
@@ -57,6 +64,7 @@ def save_checkpoint(
             trainer.trajectory_generator,
             preference_comparisons.AgentTrainer,
         )
+
         save_model(trainer.trajectory_generator, save_path)
     else:
         trainer.logger.warn(
@@ -65,8 +73,10 @@ def save_checkpoint(
 
 
 class ConflictingSyntheticGatherer(PreferenceGatherer):
-    """Computes synthetic preferences using ground-truth environment rewards.
-    Allows creating conflicting preferences."""
+    """
+    Computes synthetic preferences using ground-truth environment rewards.
+    Allows creating conflicting preferences.
+    """
 
     def __init__(
             self,
@@ -78,7 +88,8 @@ class ConflictingSyntheticGatherer(PreferenceGatherer):
             threshold: float = 50,
             custom_logger: Optional[imit_logger.HierarchicalLogger] = None,
     ) -> None:
-        """Initialize the synthetic preference gatherer.
+        """
+        Initialize the synthetic preference gatherer.
 
         Args:
             temperature: the preferences are sampled from a softmax, this is
@@ -108,6 +119,7 @@ class ConflictingSyntheticGatherer(PreferenceGatherer):
         Raises:
             ValueError: if `sample` is true and no random state is provided.
         """
+
         super().__init__(custom_logger=custom_logger)
         self.conflicting_prob = conflicting_prob
         self.temperature = temperature
@@ -120,7 +132,10 @@ class ConflictingSyntheticGatherer(PreferenceGatherer):
             raise ValueError("If `sample` is True, then `rng` must be provided.")
 
     def __call__(self, fragment_pairs: Sequence[TrajectoryWithRewPair]) -> np.ndarray:
-        """Computes probability fragment 1 is preferred over fragment 2."""
+        """
+        Computes probability fragment 1 is preferred over fragment 2.
+        """
+
         returns1, returns2 = self._reward_sums(fragment_pairs)
         if self.temperature == 0:
             if self.rng.random() < self.conflicting_prob:
@@ -200,7 +215,8 @@ def train_preference_comparisons(
         seed: int | None = None,
         tensorboard_log: str | None = None,
 ) -> tuple[BasicRewardNet, PreferenceComparisons, preference_comparisons.AgentTrainer, dict[str, Mapping[str, float] | Any] | Mapping[str, Any]]:
-    """Train a reward model using preference comparisons.
+    """
+    Train a reward model using preference comparisons.
 
     Args:
         env: the vectorized gym environment
@@ -342,7 +358,8 @@ def get_preference_comparisons(env: VecEnv, env_id: str, agent, num_iterations: 
                                discount_factor: float = 1, ensemble: bool = False,
                                seed: int | None = None, tensorboard_log: str | None = None) -> \
         Tuple[BasicRewardNet, preference_comparisons.AgentTrainer, PreferenceComparisons]:
-    """Creates an untrained reward model using preference comparisons.
+    """
+    Creates an untrained reward model using preference comparisons.
 
     Args:
         env: the vectorized gym environment
@@ -408,6 +425,7 @@ def get_preference_comparisons(env: VecEnv, env_id: str, agent, num_iterations: 
     Raises:
         ValueError: Inconsistency between config and deserialized policy normalization.
     """
+
     assert env is not None
 
     rng = np.random.default_rng(seed)
