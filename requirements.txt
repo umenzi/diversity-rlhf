@@ -13,3 +13,4 @@ wandb
 tensorboard
 sacred
 scipy
+seaborn

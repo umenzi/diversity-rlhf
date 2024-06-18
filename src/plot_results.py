@@ -6,6 +6,7 @@ from typing import List, Optional
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
+import seaborn as sns
 from pandas import Series
 from scipy import stats
 from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
@@ -162,17 +163,20 @@ def plot_agent_rewards(results_folder, environment, agents, query_types):
 
                 data[agent][query_type] = sum(rewards) / len(rewards)
 
+    # Set the color palette to a colorblind-friendly palette
+    sns.set_palette(sns.color_palette("colorblind"))
+
     for query_type in query_types:
         plt.figure()  # Create a new figure for each query type
         for agent, query_data in data.items():
             query_data: Series  # This avoids PyCharm warning
             if agent == "perfect_agent":
                 label = f"{agent}"
-                query_data.plot(label=label)
+                sns.lineplot(data=query_data[query_type].to_numpy(), label=label, errorbar="sd")
             else:
                 if query_type in query_data:
                     label = f"{agent}_{query_type}"
-                    query_data[query_type].plot(label=label)
+                    sns.lineplot(data=query_data[query_type].to_numpy(), label=label, errorbar="sd")
 
         plt.title(f'Rewards for {query_type} queries')  # Add title
         plt.xlabel('Episodes')  # Add x-axis label
