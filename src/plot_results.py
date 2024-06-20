@@ -1,3 +1,4 @@
+import math
 import os
 import re
 from itertools import combinations
@@ -148,7 +149,8 @@ def plot_agent_rewards(results_folder, environment, agents, query_types):
                 df = df.ffill()
                 rewards.append(df[column_name])
 
-            data[agent] = sum(rewards) / len(rewards)
+                # Standard error of the mean
+                data[agent] = [sum(rewards) / len(rewards), np.std(rewards, axis=0) / math.sqrt(3)]
         else:
             data[agent] = {}
 
@@ -161,7 +163,8 @@ def plot_agent_rewards(results_folder, environment, agents, query_types):
                     df = df.ffill()
                     rewards.append(df[column_name])
 
-                data[agent][query_type] = sum(rewards) / len(rewards)
+                # Standard error of the mean
+                data[agent][query_type] = [sum(rewards) / len(rewards), np.std(rewards, axis=0) / math.sqrt(3)]
 
     # Set the color palette to a colorblind-friendly palette
     sns.set_palette(sns.color_palette("colorblind"))
@@ -172,11 +175,15 @@ def plot_agent_rewards(results_folder, environment, agents, query_types):
             query_data: Series  # This avoids PyCharm warning
             if agent == "perfect_agent":
                 label = f"{agent}"
-                sns.lineplot(data=query_data[query_type].to_numpy(), label=label, errorbar="sd")
+                plt.plot(query_data[0], label=label)
+                plt.fill_between(query_data[0].index, query_data[0] - query_data[1],
+                                 query_data[0] + query_data[1], alpha=0.1)
             else:
                 if query_type in query_data:
                     label = f"{agent}_{query_type}"
-                    sns.lineplot(data=query_data[query_type].to_numpy(), label=label, errorbar="sd")
+                    plt.plot(query_data[query_type][0], label=label)
+                    plt.fill_between(query_data[query_type][0].index, query_data[query_type][0] - query_data[query_type][1],query_data[query_type][0] + query_data[query_type][1],
+                                     alpha=0.1)
 
         plt.title(f'Rewards for {query_type} queries')  # Add title
         plt.xlabel('Episodes')  # Add x-axis label
