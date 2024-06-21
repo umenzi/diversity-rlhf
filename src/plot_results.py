@@ -182,8 +182,9 @@ def plot_agent_rewards(results_folder, environment, agents, query_types):
                 if query_type in query_data:
                     label = f"{agent}_{query_type}"
                     plt.plot(query_data[query_type][0], label=label)
-                    plt.fill_between(query_data[query_type][0].index, query_data[query_type][0] - query_data[query_type][1],query_data[query_type][0] + query_data[query_type][1],
-                                     alpha=0.1)
+                    plt.fill_between(query_data[query_type][0].index,
+                                     query_data[query_type][0] - query_data[query_type][1],
+                                     query_data[query_type][0] + query_data[query_type][1], alpha=0.1)
 
         plt.title(f'Rewards for {query_type} queries')  # Add title
         plt.xlabel('Episodes')  # Add x-axis label
