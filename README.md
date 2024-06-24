@@ -4,14 +4,17 @@ Code for Bachelor thesis, _The Human Factor: Addressing Diversity in Reinforceme
 
 Abstract:
 
-> Reinforcement Learning from Human Feedback (RLHF) is a promising approach to training agents to perform complex tasks 
-> by incorporating human feedback. However, the learning process can be greatly impacted by the quality and diversity of
-> this feedback. Humans are highly diverse in their preferences, expertise, and capabilities. In this paper, we 
-> investigate the effects of conflicting feedback on the agent's performance, comparing it to an ideal agent that receives
-> optimal feedback. Furthermore, we analyse the impact of environmental complexity on agent performance and examine
-> various query selection strategies. Our results show that RLHF performance rapidly degrades with even minimal
-> conflicting feedback, and current query selection strategies are ineffective in handling feedback diversity.
-> We thus conclude that addressing diversity is crucial for RLHF, suggesting a need for alternative reward modelling approaches. 
+> Reinforcement Learning from Human Feedback (RLHF) is a promising approach to
+training agents to perform complex tasks by incorporating human feedback. However,
+the quality and diversity of this feedback can significantly impact the learning process.
+Humans are highly diverse in their preferences, expertise, and capabilities. This paper
+investigates the effects of conflicting feedback on the agent’s performance. We analyse
+the impact of environmental complexity and examine various query selection strate-
+gies. Our results show that RLHF performance rapidly degrades with even minimal
+conflicting feedback in simple environments, and current query selection strategies are
+ineffective in handling feedback diversity. We thus conclude that addressing diversity
+is crucial for RLHF, suggesting alternative reward modelling approaches are needed.
+Full code is available on GitHub. 
 
 ## Installation
 
