@@ -1,6 +1,6 @@
 # The human factor: Addressing Diversity in RLHF
 
-Code for Bachelor thesis, _The Human Factor: Addressing Diversity in Reinforcement Learning from Human Feedback_.
+Code for Bachelor thesis, [_The Human Factor: Addressing Diversity in Reinforcement Learning from Human Feedback_](http://resolver.tudelft.nl/uuid:a7b37b44-4798-492e-822e-f1b7c347410b).
 
 Abstract:
 
