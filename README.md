@@ -63,7 +63,7 @@ It also includes helper methods to generate the csv files from wandb logs.
 
 Please cite this repository if it was useful for your research:
 
-```
+```bibtex
 @article{javi2024rlhf,
   title={The Human Factor: Addressing Diversity in Reinforcement Learning from Human Feedback},
   subtitle={Bachelor Thesis},
