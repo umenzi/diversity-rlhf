@@ -58,3 +58,19 @@ The `plot_results.py` script can be used to plot the results of the agents.
 The script will plot the average evaluating reward per episode and 
 conduct permutation tests to compare the agents' performance.
 It also includes helper methods to generate the csv files from wandb logs.
+
+## Citation (BibTeX)
+
+Please cite this repository if it was useful for your research:
+
+```
+@article{javi2024rlhf,
+  title={The Human Factor: Addressing Diversity in Reinforcement Learning from Human Feedback},
+  subtitle={Bachelor Thesis},
+  author={Paez Franco, Javier},
+  year={2024},
+  school={Delft University of Technology},
+  type={Bachelor Thesis},
+  url = {http://resolver.tudelft.nl/uuid:a7b37b44-4798-492e-822e-f1b7c347410b},
+}
+```
