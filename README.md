@@ -66,7 +66,7 @@ Please cite this repository if it was useful for your research:
 ```bibtex
 @article{javi2024rlhf,
   title={The Human Factor: Addressing Diversity in Reinforcement Learning from Human Feedback},
-  subtitle={Bachelor Thesis},
+  subtitle={How can RLHF deal with possibly conflicting feedback?},
   author={Paez Franco, Javier},
   year={2024},
   school={Delft University of Technology},
